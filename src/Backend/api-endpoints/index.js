@@ -18,4 +18,5 @@ export { default as deleteBanner } from './banners/deleteBanner.js';
 
 // Account related exports
 export { default as login } from './accounts/login.js';
+export { default as logout } from './accounts/logout.js';
 export { default as authenticate } from './accounts/authenticate.js';

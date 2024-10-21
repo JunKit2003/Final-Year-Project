@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
 import { Box, Typography, Grid, Card, CardContent, Button } from "@mui/material";
 import Slider from "react-slick";
+import axios from "axios"; // Import axios
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -11,22 +12,17 @@ function Home() {
   const [showAllBrands, setShowAllBrands] = useState(false); // Changed state name
 
   useEffect(() => {
-    // Fetch advertisement images
+    // Fetch advertisement images using axios
     const fetchImages = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`, {
-          method: "POST",
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`, {}, {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({}),
+          withCredentials: true, // Include cookies if necessary
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = response.data;
         if (data.banners) {
           const imageUrls = data.banners.map((banner) =>
             `${process.env.REACT_APP_BACKEND_HOST}${banner.imageUrl}`
@@ -38,22 +34,17 @@ function Home() {
       }
     };
 
-    // Fetch brands dynamically from the API
+    // Fetch brands dynamically using axios
     const fetchBrands = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_HOST}/api/product/getBrands`, {
-          method: "POST",
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/product/getBrands`, {}, {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({}),
+          withCredentials: true,
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch brands, status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = response.data;
         console.log("Fetched brands:", data.brands); // Log brands data to console
         setBrands(data.brands);
       } catch (error) {
@@ -138,6 +129,7 @@ function Home() {
       {/* Embedded Map Section */}
       <Box sx={{ width: "100%", margin: 0, padding: 0 }}>
         <iframe
+          title="map"
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3983.815222182998!2d101.62756258489375!3d3.1434261450361616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31cc495f03e40a99%3A0x50f6e08edd4ee8b8!2sFaction%20Bikeworks!5e0!3m2!1sen!2smy!4v1728336895257!5m2!1sen!2smy"
           width="100%"
           height="450"

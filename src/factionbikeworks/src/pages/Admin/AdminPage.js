@@ -6,6 +6,7 @@ import useGlobalNavigation from '../../routes/Navigation'; // Import the useGlob
 import Dashboard from './Dashboard';
 import ManageProducts from './ManageProducts';
 import ManageBanners from './ManageBanners.js';
+import axios from 'axios'; // Import axios
 
 const AdminPage = () => {
   const { goToHomePage } = useGlobalNavigation();
@@ -15,20 +16,33 @@ const AdminPage = () => {
   useEffect(() => {
     const checkAuthorization = async () => {
       try {
-        const response = await fetch('${process.env.REACT_APP_BACKEND_HOST}/api/account/authenticate', {
-          method: 'POST',
-          credentials: 'include', // Include cookies for session management
-        });
-        const data = await response.json();
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/account/authenticate`, 
+          {}, // Empty body for the POST request
+          { withCredentials: true } // Include cookies in the request
+        );
 
-        if (!response.ok || data.message.includes('Access denied')) {
+        // Check if the response is OK
+        if (response.status !== 200) {
+          console.error('Response not OK:', response.data);
           setIsAuthorized(false);
-          goToHomePage(); // Redirect to home page if not authorized
+          goToHomePage();
+          return;
+        }
+
+        const data = response.data;
+
+        // Check the user's category
+        if (data.user && data.user.category === 'admin') {
+          setIsAuthorized(true); // User is an admin, allow access
+        } else {
+          setIsAuthorized(false); // User is not an admin, deny access
+          goToHomePage();
         }
       } catch (error) {
         console.error('Error checking authorization:', error);
         setIsAuthorized(false);
-        goToHomePage(); // Redirect on error as well
+        goToHomePage();
       }
     };
 

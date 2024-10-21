@@ -1,38 +1,50 @@
 import React, { useState } from "react";
 import { Box, Button, TextField, Typography, Card, CardContent } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // Assuming you're using react-router for navigation
+import axios from "../AxiosSingleton"; // Import Axios
 
 function Login() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState(""); // State for success message
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_HOST}/api/account/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_HOST}/api/account/login`,
+        {
           emailOrUsername,
           password,
-        }),
-      });
+        }
+      );
 
-      const data = await response.json();
+      console.log("Login successful:", response.data); // Log the data for debugging
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed!");
+      // Check if the response contains user data
+      if (response.data.user) {
+        setSuccessMessage("Login successful!"); // Set success message
+        setErrorMessage(""); // Clear any previous error message
+
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          navigate("/"); // Redirect to home page
+        }, 2000); // 2 seconds delay
+      } else {
+        setErrorMessage("Login failed: No user data received.");
       }
-
-      // Handle successful login (e.g., save token, redirect)
-      navigate("/admin"); // Redirect to admin page on success
     } catch (error) {
-      setErrorMessage(error.message);
+      // Check if error response exists and set an appropriate error message
+      if (error.response) {
+        setErrorMessage(error.response.data.message || "Login failed!");
+        setSuccessMessage(""); // Clear any previous success message
+      } else {
+        setErrorMessage("Login failed: Network error.");
+        setSuccessMessage(""); // Clear any previous success message
+      }
     }
   };
 
@@ -66,6 +78,11 @@ function Login() {
             {errorMessage && (
               <Typography color="error" variant="body2" align="center" sx={{ marginTop: 2 }}>
                 {errorMessage}
+              </Typography>
+            )}
+            {successMessage && (
+              <Typography color="green" variant="body2" align="center" sx={{ marginTop: 2 }}>
+                {successMessage}
               </Typography>
             )}
             <Button type="submit" variant="contained" color="primary" fullWidth sx={{ marginTop: 3 }}>

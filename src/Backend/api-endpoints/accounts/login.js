@@ -40,11 +40,30 @@ export default async function login(req, res) {
             category: user.category,
         };
 
-        // Send success response
+        // Ensure to save the session after setting user info
+        // req.session.save((err) => {
+        //     if (err) {
+        //         console.error("Session save error:", err);
+        //         return res.status(500).send({ message: "Internal server error", error: err });
+        //     }
+
+        //     // Send success response
+        //     res.status(200).json({
+        //         message: "Login successful!",
+        //         user: req.session.user, // Return the session user data
+        //     });
+        // });
+
+        req.session.save()
+
+        console.log("Session after login")
+        console.log(req.session)
+
         res.status(200).json({
             message: "Login successful!",
             user: req.session.user, // Return the session user data
         });
+
     } catch (error) {
         if (error instanceof InputValidationError) {
             return res.status(400).json({ message: error.message });

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
 import { Box, Typography, Grid, Card, CardContent, Button, CardMedia } from "@mui/material";
 import Slider from "react-slick";
+import axios from "axios"; // Import axios
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -15,19 +16,14 @@ function Catalog() {
     // Fetch advertisement images
     const fetchImages = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`, {
-          method: "POST",
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`, {}, {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({}),
+          withCredentials: true, // Include cookies if necessary
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = response.data;
         if (data.banners) {
           const imageUrls = data.banners.map((banner) =>
             `${process.env.REACT_APP_BACKEND_HOST}${banner.imageUrl}`
@@ -42,19 +38,14 @@ function Catalog() {
     // Fetch categories dynamically from the API
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_HOST}/api/product/getCategories`, {
-          method: "POST",
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/product/getCategories`, {}, {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({}),
+          withCredentials: true,
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch categories, status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = response.data;
         setCategories(data.categories);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -64,19 +55,14 @@ function Catalog() {
     // Fetch products dynamically from the API
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_HOST}/api/product/get`, {
-          method: "POST",
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/product/get`, {}, {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({}),
+          withCredentials: true,
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch products, status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = response.data;
         console.log("Fetched products:", data.products); // Log products to check if they're coming through
         setProducts(data.products);
       } catch (error) {

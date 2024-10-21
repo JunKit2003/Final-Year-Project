@@ -10,6 +10,7 @@ import {
     getBanners,
     deleteBanner,
     login,
+    logout,
     authenticate
 } from '../api-endpoints/index.js'; // Import necessary endpoints
 
@@ -38,6 +39,7 @@ router.delete('/banner/delete/:id', deleteBanner);
 
 // Account-related routes
 router.post('/account/login', login);
+router.post('/account/logout', logout);
 router.post('/account/authenticate', authenticate);
 
 
