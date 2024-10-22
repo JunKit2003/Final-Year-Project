@@ -30,7 +30,7 @@ const initializeDatabase = async () => {
 		// 			price: 899.99,
 		// 			description:
 		// 				"A versatile hardtail mountain bike perfect for light trails.",
-		// 			colors: ["Black", "Blue", "Red"],
+		// 			variations: ["Black", "Blue", "Red"],
 		// 			image_folder_path: "N/A",
 		// 		},
 				

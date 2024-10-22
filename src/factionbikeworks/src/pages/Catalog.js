@@ -5,6 +5,7 @@ import Slider from "react-slick";
 import axios from "axios"; // Import axios
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { Link } from "react-router-dom"; // Import Link for navigation
 
 function Catalog() {
   const [images, setImages] = useState([]);
@@ -13,7 +14,6 @@ function Catalog() {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   useEffect(() => {
-    // Fetch advertisement images
     const fetchImages = async () => {
       try {
         const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`, {}, {
@@ -35,7 +35,6 @@ function Catalog() {
       }
     };
 
-    // Fetch categories dynamically from the API
     const fetchCategories = async () => {
       try {
         const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/product/getCategories`, {}, {
@@ -52,7 +51,6 @@ function Catalog() {
       }
     };
 
-    // Fetch products dynamically from the API
     const fetchProducts = async () => {
       try {
         const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/product/get`, {}, {
@@ -63,7 +61,6 @@ function Catalog() {
         });
 
         const data = response.data;
-        console.log("Fetched products:", data.products); // Log products to check if they're coming through
         setProducts(data.products);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -75,7 +72,6 @@ function Catalog() {
     fetchProducts();
   }, []);
 
-  // Define the settings for the slider component
   const settings = {
     dots: true,
     infinite: true,
@@ -86,10 +82,8 @@ function Catalog() {
     autoplaySpeed: 3000,
   };
 
-  // Default image if no image data is available
   const defaultImageUrl = "https://via.placeholder.com/300";
 
-  // Filter products by selected category
   const filteredProducts = selectedCategory === "All" 
     ? products 
     : products.filter(product => product.category === selectedCategory);
@@ -150,22 +144,24 @@ function Catalog() {
 
             return (
               <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card>
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={imageUrl}
-                    alt={product.name}
-                  />
-                  <CardContent>
-                    <Typography variant="h5">{product.name}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {product.description || "No description available"}
-                    </Typography>
-                    <Typography variant="h6">RM{product.price}</Typography>
-                    <Button variant="contained" sx={{ mt: 2 }}>Add to Cart</Button>
-                  </CardContent>
-                </Card>
+                <Link to={`/viewProduct/${product.id}`} style={{ textDecoration: 'none' }}>
+                  <Card>
+                    <CardMedia
+                      component="img"
+                      height="200"
+                      image={imageUrl}
+                      alt={product.name}
+                    />
+                    <CardContent>
+                      <Typography variant="h5">{product.name}</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {product.description || "No description available"}
+                      </Typography>
+                      <Typography variant="h6">RM{product.price}</Typography>
+                      <Button variant="contained" sx={{ mt: 2 }}>Add to Cart</Button>
+                    </CardContent>
+                  </Card>
+                </Link>
               </Grid>
             );
           })}

@@ -5,10 +5,12 @@ import { useNavigate } from 'react-router-dom';
 const useGlobalNavigation = () => {
   const navigate = useNavigate();
 
+
   const goToCatalogPage = () => navigate("/catalog")
   const goToAdminPage = () => navigate('/admin');
   const goToAboutPage = () => navigate('/about');
   const goToLoginPage = () => navigate('/login');
+  const goToViewProductPage = (productId) => navigate(`/viewProduct/${productId}`); // Accept productId
   const goToHomePage = () => navigate('/');
 
   return {
@@ -17,6 +19,7 @@ const useGlobalNavigation = () => {
     goToHomePage,
     goToCatalogPage,
     goToLoginPage,
+    goToViewProductPage,
   };
 };
 

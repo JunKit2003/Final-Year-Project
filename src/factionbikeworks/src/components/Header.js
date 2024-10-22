@@ -8,9 +8,10 @@ const drawerHeight = 80;
 const Header = () => {
   const { goToAdminPage, goToAboutPage, goToHomePage, goToCatalogPage, goToLoginPage } = useGlobalNavigation();
   
-  // State to manage login status and user name
+  // State to manage login status, user name, and user category
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
+  const [userCategory, setUserCategory] = useState(''); // State for user category
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false); // Dialog state for logout confirmation
 
   const checkAuthStatus = async () => {
@@ -21,6 +22,7 @@ const Header = () => {
       if (response.status === 200 && response.data.user) {
         setIsLoggedIn(true);
         setUserName(response.data.user.username);
+        setUserCategory(response.data.user.category); // Set the user category
       }
     } catch (error) {
       console.error("Failed to fetch authentication status", error);
@@ -39,6 +41,7 @@ const Header = () => {
       if (response.status === 200) {
         setIsLoggedIn(false);
         setUserName(''); // Clear the username on logout
+        setUserCategory(''); // Clear the user category on logout
         goToHomePage();
       } else {
         console.error('Logout failed');
@@ -97,9 +100,14 @@ const Header = () => {
         <ListItemButton onClick={goToAboutPage}>
           <ListItemText primary="About" />
         </ListItemButton>
-        <ListItemButton onClick={goToAdminPage}>
-          <ListItemText primary="Admin" />
-        </ListItemButton>
+
+        {/* Conditional rendering for Admin button */}
+        {isLoggedIn && userCategory === 'admin' && (
+          <ListItemButton onClick={goToAdminPage}>
+            <ListItemText primary="Admin" />
+          </ListItemButton>
+        )}
+
         <ListItemButton onClick={goToCatalogPage}>
           <ListItemText primary="Catalog" />
         </ListItemButton>

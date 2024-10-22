@@ -74,6 +74,25 @@ function withDatabaseConnectivity(dbOperation) {
 
 // Product-related functions
 
+
+// Retrieve product based on ID
+const getProductFromDB = withDatabaseConnectivity(async (productId) => {
+	try {
+		// Fetch a single product by its ID
+		const product = await db.Products.findOne({ where: { id: productId } });
+
+		if (!product) {
+			throw new ProductNotFoundError(`Product with ID ${productId} not found.`);
+		}
+
+		// Extract just the core data (dataValues)
+		return product.get({ plain: true });
+	} catch (error) {
+		throw error;
+	}
+});
+
+
 // Retrieve all products
 const getProductsFromDB = withDatabaseConnectivity(async () => {
 	try {
@@ -384,6 +403,7 @@ const getUserByUsernameOrEmail = withDatabaseConnectivity(async (usernameOrEmail
 export {
     // Exporting product utility functions
     pingDatabase,
+	getProductFromDB,
     getProductsFromDB,
     addProductToDB,
     updateProductToDB,

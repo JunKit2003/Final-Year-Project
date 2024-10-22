@@ -6,9 +6,10 @@ import { Routes, Route } from 'react-router-dom';
 // Lazy load the components
 const Home = lazy(() => import('../pages/Home.js'));
 const About = lazy(() => import('../pages/About.js'));
-const AdminPage = lazy(() => import('../pages/Admin/AdminPage.js')); // Only declare AdminPage once
+const AdminPage = lazy(() => import('../pages/Admin/AdminPage.js')); 
 const Catalog = lazy(() => import('../pages/Catalog.js'));
 const Login = lazy(() => import('../pages/Login.js'));
+const ViewProduct = lazy(() => import('../pages/ViewProduct.js'));
 
 const AppRoutes = () => {
   return (
@@ -19,6 +20,7 @@ const AppRoutes = () => {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/catalog" element={<Catalog />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/viewProduct/:productId" element={<ViewProduct />} />
       </Routes>
     </Suspense>
   );
