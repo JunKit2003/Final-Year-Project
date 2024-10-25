@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
-import { Box, Typography, Grid, Card, CardContent, Button, CardMedia } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  CardMedia, // Add this import
+} from "@mui/material";
+
 import Slider from "react-slick";
-import axios from "axios"; // Import axios
+import axios from "axios";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link } from "react-router-dom";
 
 function Catalog() {
   const [images, setImages] = useState([]);
@@ -16,17 +25,22 @@ function Catalog() {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`, {}, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true, // Include cookies if necessary
-        });
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`,
+          {},
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
 
         const data = response.data;
         if (data.banners) {
-          const imageUrls = data.banners.map((banner) =>
-            `${process.env.REACT_APP_BACKEND_HOST}${banner.imageUrl}`
+          const imageUrls = data.banners.map(
+            (banner) =>
+              `${process.env.REACT_APP_BACKEND_HOST}${banner.imageUrl}`
           );
           setImages(imageUrls);
         }
@@ -37,12 +51,16 @@ function Catalog() {
 
     const fetchCategories = async () => {
       try {
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/product/getCategories`, {}, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        });
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/product/getCategories`,
+          {},
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
 
         const data = response.data;
         setCategories(data.categories);
@@ -53,14 +71,19 @@ function Catalog() {
 
     const fetchProducts = async () => {
       try {
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/product/get`, {}, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        });
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/product/get`,
+          {},
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
 
         const data = response.data;
+        console.log(data);
         setProducts(data.products);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -84,16 +107,26 @@ function Catalog() {
 
   const defaultImageUrl = "https://via.placeholder.com/300";
 
-  const filteredProducts = selectedCategory === "All" 
-    ? products 
-    : products.filter(product => product.category === selectedCategory);
+  const filteredProducts =
+    selectedCategory === "All"
+      ? products
+      : products.filter(
+          (product) => product.category === selectedCategory
+        );
 
   return (
     <div style={{ margin: 0, padding: 0 }}>
       <Header />
 
       {/* Advertisement Carousel Section */}
-      <Box sx={{ width: "100%", margin: 0, padding: 0, backgroundColor: "black" }}>
+      <Box
+        sx={{
+          width: "100%",
+          margin: 0,
+          padding: 0,
+          backgroundColor: "black",
+        }}
+      >
         <Slider {...settings}>
           {images.map((image, index) => (
             <div key={index}>
@@ -120,13 +153,18 @@ function Catalog() {
           Shop by Categories
         </Typography>
         <Grid container spacing={2} justifyContent="center">
-          <Button variant={selectedCategory === "All" ? "contained" : "outlined"} onClick={() => setSelectedCategory("All")}>
+          <Button
+            variant={selectedCategory === "All" ? "contained" : "outlined"}
+            onClick={() => setSelectedCategory("All")}
+          >
             All
           </Button>
           {categories.map((category, index) => (
             <Button
               key={index}
-              variant={selectedCategory === category ? "contained" : "outlined"}
+              variant={
+                selectedCategory === category ? "contained" : "outlined"
+              }
               onClick={() => setSelectedCategory(category)}
             >
               {category}
@@ -139,26 +177,57 @@ function Catalog() {
       <Box sx={{ padding: 4 }}>
         <Grid container spacing={4}>
           {filteredProducts.map((product, index) => {
-            const imagesData = product.imagesData || {};
-            const imageUrl = imagesData[product.colors[0]]?.files[0] || defaultImageUrl;
+            // Extract all images from all variations
+            const variationImages = product.variations.flatMap(
+              (variation) => variation.images?.files || []
+            );
+
+            // Fallback to default image if no images are found
+            const hasImages = variationImages.length > 0;
+
+            const prices = product.variations.map((v) => parseFloat(v.price));
+            const minPrice = Math.min(...prices);
 
             return (
               <Grid item xs={12} sm={6} md={4} key={index}>
-                <Link to={`/viewProduct/${product.id}`} style={{ textDecoration: 'none' }}>
+                <Link to={`/viewProduct/${product.id}`} style={{ textDecoration: "none" }}>
                   <Card>
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={imageUrl}
-                      alt={product.name}
-                    />
+                    {/* Product Images Carousel */}
+                    {hasImages ? (
+                      <Slider {...settings}>
+                        {variationImages.map((image, idx) => (
+                          <div key={idx}>
+                            <CardMedia
+                              component="img"
+                              height="200"
+                              image={image}
+                              alt={`Product Image ${idx + 1}`}
+                              style={{ objectFit: "contain" }}
+                            />
+                          </div>
+                        ))}
+                      </Slider>
+                    ) : (
+                      <CardMedia
+                        component="img"
+                        height="200"
+                        image={defaultImageUrl}
+                        alt="Default Image"
+                        style={{ objectFit: "contain" }}
+                      />
+                    )}
+
                     <CardContent>
                       <Typography variant="h5">{product.name}</Typography>
                       <Typography variant="body2" color="textSecondary">
                         {product.description || "No description available"}
                       </Typography>
-                      <Typography variant="h6">RM{product.price}</Typography>
-                      <Button variant="contained" sx={{ mt: 2 }}>Add to Cart</Button>
+                      <Typography variant="h6">
+                        Starting from RM{minPrice}
+                      </Typography>
+                      <Button variant="contained" sx={{ mt: 2 }}>
+                        View Details
+                      </Button>
                     </CardContent>
                   </Card>
                 </Link>

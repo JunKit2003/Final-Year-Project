@@ -1,215 +1,335 @@
 import React, { useEffect, useState } from "react";
 import {
-	DialogContent,
-	DialogActions,
-	Button,
-	Dialog,
-	Box,
+  DialogContent,
+  DialogActions,
+  Button,
+  Dialog,
+  Box,
+  TextField,
+  Typography,
+  IconButton,
 } from "@mui/material";
-import BubbleSelector from "../BubbleSelector";
-import TextFieldWithCounter from "../TextFieldWithCounter";
 import LoadingButton from "../LoadingButton";
 import ImageUploadUI from "../ImageUploadUI";
+import { AddCircleOutline, RemoveCircleOutline } from "@mui/icons-material";
 
 const AddEditProductForm = ({
-	initialProductData,
-	handleSaveProduct,
-	handleCloseForm,
-	isSaving,
+  initialProductData,
+  handleSaveProduct,
+  handleCloseForm,
+  isSaving,
 }) => {
-	const CHARACTER_LIMITS = {
-		category: 50,
-		name: 100,
-		brand: 100,
-		price: 15,
-		colors: 100,
-		description: 500,
-	};
+  const CHARACTER_LIMITS = {
+    category: 50,
+    name: 100,
+    brand: 100,
+    description: 500,
+  };
 
-	const [currentProduct, setCurrentProduct] = useState(initialProductData);
-	const [imagesData, setImagesData] = useState({});
-	const [hasImageChanges, setHasImageChanges] = useState(false);
-	const [openImageUploadUI, setOpenImageUploadUI] = useState(false);
-	const [status, setStatus] = useState(initialProductData.status || "Available"); // Track status
+  const [currentProduct, setCurrentProduct] = useState(initialProductData);
+  const [variations, setVariations] = useState(
+    initialProductData.variations || []
+  );
+  const [imagesData, setImagesData] = useState({});
+  const [hasImageChanges, setHasImageChanges] = useState(false);
+  const [openImageUploadUI, setOpenImageUploadUI] = useState(false);
 
-	useEffect(() => {
-		if (initialProductData.imagesData) {
-			setImagesData(initialProductData.imagesData);
-		}
-	}, [initialProductData.imagesData]);
+  useEffect(() => {
+    if (initialProductData.variations) {
+      const imagesData = {};
+      initialProductData.variations.forEach((variation) => {
+        const { sku, images } = variation;
+        if (images) {
+          imagesData[sku] = images;
+        }
+      });
+  
+      console.log("Extracted Images Data:", imagesData); // Debugging step
+      setImagesData(imagesData);
+    } else {
+      console.warn("No variations found for the product.");
+    }
+  }, [initialProductData]);
+  
 
-	const handleInputChange = (event) => {
-		const { name, value } = event.target;
-		setCurrentProduct((prevProduct) => ({
-			...prevProduct,
-			[name]: value,
-		}));
-	};
+  
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setCurrentProduct((prevProduct) => ({
+      ...prevProduct,
+      [name]: value,
+    }));
+  };
 
-	const handleOpenImageUploadUI = () => {
-		setOpenImageUploadUI(true);
-	};
+  const handleVariationChange = (index, field, value) => {
+    const updatedVariations = [...variations];
+    updatedVariations[index][field] = value;
+    setVariations(updatedVariations);
+  };
 
-	const handleCloseImageUploadUI = () => {
-		setOpenImageUploadUI(false);
-	};
+  const addVariation = () => {
+    setVariations([
+      ...variations,
+      {
+        sku: "",
+        price: "",
+        stock: "",
+        intendedUse: "",
+        status: "Available",
+      },
+    ]);
+  };
 
-	const handleSaveImages = (colorImages) => {
-		setImagesData((prevData) => {
-			const mergedData = {
-				...prevData,
-				...colorImages,
-			};
+  const removeVariation = (index) => {
+    const updatedVariations = [...variations];
+    updatedVariations.splice(index, 1);
+    setVariations(updatedVariations);
+  };
 
-			const isSame = JSON.stringify(prevData) === JSON.stringify(mergedData);
-			if (!isSame) {
-				setHasImageChanges(true);
-			}
+  const handleOpenImageUploadUI = () => {
+    setOpenImageUploadUI(true);
+  };
 
-			return mergedData;
-		});
+  const handleCloseImageUploadUI = () => {
+    setOpenImageUploadUI(false);
+  };
 
-		handleCloseImageUploadUI();
-	};
+  const handleSaveImages = (variationImages) => {
+    setImagesData((prevData) => {
+      const mergedData = {
+        ...prevData,
+        ...variationImages,
+      };
 
-	const handleSave = () => {
-		const cleanedImagesData = Object.keys(imagesData)
-			.filter((color) => currentProduct.colors.includes(color))
-			.reduce((acc, color) => {
-				acc[color] = imagesData[color];
-				return acc;
-			}, {});
+      const isSame = JSON.stringify(prevData) === JSON.stringify(mergedData);
+      if (!isSame) {
+        setHasImageChanges(true);
+      }
 
-		const hasImageChangesFinal =
-			JSON.stringify(imagesData) !== JSON.stringify(cleanedImagesData);
+      return mergedData;
+    });
 
-		const productData = {
-			...currentProduct,
-			imagesData: cleanedImagesData,
-			hasImageChanges: hasImageChanges || hasImageChangesFinal,
-			status, // Include status in the product data
-		};
+    handleCloseImageUploadUI();
+  };
 
-		handleSaveProduct(productData);
-	};
+  const handleSave = () => {
+    const formData = new FormData();
+  
+    // Append product details
+    formData.append("name", currentProduct.name || "");
+    formData.append("brand", currentProduct.brand || "");
+    formData.append("category", currentProduct.category || "");
+    formData.append("description", currentProduct.description || "");
+    formData.append("hasImageChanges", hasImageChanges.toString());
+  
+    // Stringify and append variations
+    formData.append("variations", JSON.stringify(variations));
+  
+    // Handle images (if any)
+    if (hasImageChanges) {
+      Object.keys(imagesData).forEach((sku) => {
+        const { files: skuFiles, names: skuNames } = imagesData[sku];
+        skuFiles.forEach((file, index) => {
+          formData.append("files", file);
+          formData.append("names", skuNames[index]);
+          formData.append("keys", sku); // SKU acts as the key
+        });
+      });
+    }
+  
+    // Send formData via Axios
+    handleSaveProduct(formData);
+  };
 
-	const handleStatusChange = (newStatus) => {
-		setStatus(newStatus);
-	};
+  console.log("existingImagesData:", imagesData); // Log the data here
+  return (
+    <>
+      <DialogContent
+        sx={{
+          maxHeight: "600px",
+          overflowY: "auto",
+        }}
+      >
+        <TextField
+          label="Category"
+          name="category"
+          value={currentProduct.category}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+          inputProps={{ maxLength: CHARACTER_LIMITS.category }}
+        />
+        <TextField
+          label="Name"
+          name="name"
+          value={currentProduct.name}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+          inputProps={{ maxLength: CHARACTER_LIMITS.name }}
+        />
+        <TextField
+          label="Brand"
+          name="brand"
+          value={currentProduct.brand}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+          inputProps={{ maxLength: CHARACTER_LIMITS.brand }}
+        />
+        <TextField
+          label="Description"
+          name="description"
+          value={currentProduct.description}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+          multiline
+          rows={4}
+          inputProps={{ maxLength: CHARACTER_LIMITS.description }}
+        />
 
-	return (
-		<>
-			<DialogContent
-				sx={{
-					maxHeight: "600px",
-					overflowY: "auto",
-				}}
-			>
-				<TextFieldWithCounter
-					label="Item Category"
-					name="category"
-					value={currentProduct.category}
-					onChange={handleInputChange}
-					characterLimit={CHARACTER_LIMITS.category}
-				/>
-				<TextFieldWithCounter
-					label="Item Name"
-					name="name"
-					value={currentProduct.name}
-					onChange={handleInputChange}
-					characterLimit={CHARACTER_LIMITS.name}
-				/>
-				<TextFieldWithCounter
-					label="Item Brand"
-					name="brand"
-					value={currentProduct.brand}
-					onChange={handleInputChange}
-					characterLimit={CHARACTER_LIMITS.brand}
-				/>
-				<TextFieldWithCounter
-					label="Item Price"
-					name="price"
-					value={currentProduct.price}
-					onChange={handleInputChange}
-					characterLimit={CHARACTER_LIMITS.price || Infinity}
-					numericOnly
-				/>
-				<BubbleSelector
-					items={currentProduct.colors}
-					setItems={(newColors) =>
-						handleInputChange({
-							target: { name: "colors", value: newColors },
-						})
-					}
-					label="Add Color"
-					helperText="Press Enter to add a color."
-					characterLimit={CHARACTER_LIMITS.colors}
-					maxHeight={150}
-				/>
-				<Box sx={{ mt: 1, mb: 3 }}>
-					<Button
-						onClick={handleOpenImageUploadUI}
-						color="primary"
-						variant="contained"
-					>
-						Add Images for Colors
-					</Button>
-				</Box>
-				<TextFieldWithCounter
-					label="Item Description"
-					name="description"
-					value={currentProduct.description}
-					onChange={handleInputChange}
-					characterLimit={CHARACTER_LIMITS.description}
-				/>
+        {/* Variations */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="h6">Variations</Typography>
+          {variations.map((variation, index) => (
+            <Box
+              key={index}
+              sx={{
+                border: "1px solid #ccc",
+                borderRadius: 2,
+                padding: 2,
+                marginTop: 2,
+                position: "relative",
+              }}
+            >
+              <IconButton
+                onClick={() => removeVariation(index)}
+                sx={{ position: "absolute", top: 8, right: 8 }}
+              >
+                <RemoveCircleOutline />
+              </IconButton>
+              <TextField
+                label="SKU"
+                value={variation.sku}
+                onChange={(e) =>
+                  handleVariationChange(index, "sku", e.target.value)
+                }
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Price"
+                value={variation.price}
+                onChange={(e) =>
+                  handleVariationChange(index, "price", e.target.value)
+                }
+                fullWidth
+                margin="normal"
+                type="number"
+                inputProps={{ min: 0, step: "0.01" }}
+              />
+              <TextField
+                label="Stock"
+                value={variation.stock}
+                onChange={(e) =>
+                  handleVariationChange(index, "stock", e.target.value)
+                }
+                fullWidth
+                margin="normal"
+                type="number"
+                inputProps={{ min: 0 }}
+              />
+              <TextField
+                label="Intended Use"
+                value={variation.intendedUse}
+                onChange={(e) =>
+                  handleVariationChange(index, "intendedUse", e.target.value)
+                }
+                fullWidth
+                margin="normal"
+                multiline
+                rows={2}
+              />
+              {/* Status Buttons */}
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant={
+                    variation.status === "Available" ? "contained" : "outlined"
+                  }
+                  color="success"
+                  onClick={() => handleVariationChange(index, "status", "Available")}
+                >
+                  Available
+                </Button>
+                <Button
+                  variant={
+                    variation.status === "Out of stock" ? "contained" : "outlined"
+                  }
+                  color="error"
+                  onClick={() => handleVariationChange(index, "status", "Out of stock")}
+                  sx={{ ml: 2 }}
+                >
+                  Out of stock
+                </Button>
+              </Box>
+            </Box>
+          ))}
+          <Button
+            variant="outlined"
+            startIcon={<AddCircleOutline />}
+            onClick={addVariation}
+            sx={{ mt: 2 }}
+          >
+            Add Variation
+          </Button>
+        </Box>
 
-				{/* Status Buttons */}
-				<Box sx={{ mt: 2 }}>
-					<Button
-						variant={status === "Available" ? "contained" : "outlined"}
-						color="success"
-						onClick={() => handleStatusChange("Available")}
-					>
-						Available
-					</Button>
-					<Button
-						variant={status === "Out of stock" ? "contained" : "outlined"}
-						color="error"
-						onClick={() => handleStatusChange("Out of stock")}
-						sx={{ ml: 2 }} // Add margin-left for spacing
-					>
-						Out of stock
-					</Button>
-				</Box>
-			</DialogContent>
-			<DialogActions>
-				<Button onClick={handleCloseForm} color="primary">
-					Cancel
-				</Button>
-				<LoadingButton
-					onClick={handleSave}
-					color="primary"
-					isLoading={isSaving}
-				>
-					Save
-				</LoadingButton>
-			</DialogActions>
+        {/* Image Upload */}
+        <Box sx={{ mt: 3 }}>
+          <Button
+            onClick={handleOpenImageUploadUI}
+            color="primary"
+            variant="contained"
+          >
+            Add Images for Variations
+          </Button>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleCloseForm} color="primary">
+          Cancel
+        </Button>
+        <LoadingButton
+          onClick={handleSave}
+          color="primary"
+          isLoading={isSaving}
+        >
+          Save
+        </LoadingButton>
+      </DialogActions>
 
-			<Dialog
-				open={openImageUploadUI}
-				onClose={handleCloseImageUploadUI}
-				maxWidth="md"
-				fullWidth
-			>
-				<ImageUploadUI
-					colors={currentProduct.colors}
-					existingImagesData={imagesData}
-					handleSave={handleSaveImages}
-					handleClose={handleCloseImageUploadUI}
-				/>
-			</Dialog>
-		</>
-	);
+      <Dialog
+        open={openImageUploadUI}
+        onClose={handleCloseImageUploadUI}
+        maxWidth="md"
+        fullWidth
+      >
+        
+
+        <ImageUploadUI
+          variations={variations}
+          existingImagesData={imagesData}
+          handleSave={handleSaveImages}
+          handleClose={handleCloseImageUploadUI}
+        />
+
+
+
+      </Dialog>
+    </>
+    
+  );
 };
 
 export default AddEditProductForm;

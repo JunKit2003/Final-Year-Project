@@ -3,10 +3,10 @@ import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import "./style.css";
 
-// Helper function to determine brightness based on image data
-const getImageBrightness = (image, callback) => {
-	const img = document.createElement("img");
-	img.src = URL.createObjectURL(image);
+// Helper function to determine brightness based on image URL
+const getImageBrightness = (imageUrl, callback) => {
+	const img = new Image();
+	img.src = imageUrl;
 	img.crossOrigin = "Anonymous"; // Ensure cross-origin compatibility
 
 	img.onload = () => {
@@ -40,16 +40,19 @@ const ControlledCarousel = ({ images }) => {
 	const [brightnessValues, setBrightnessValues] = useState([]);
 
 	useEffect(() => {
-		// Calculate the brightness for each image and store the result
-		images.forEach((image, index) => {
-			getImageBrightness(image, (brightness) => {
-				setBrightnessValues((prevValues) => {
-					const newValues = [...prevValues];
-					newValues[index] = brightness;
-					return newValues;
-				});
-			});
-		});
+		const calculateBrightness = async () => {
+			const newBrightnessValues = await Promise.all(
+				images.map(
+					(image) =>
+						new Promise((resolve) => {
+							getImageBrightness(image, resolve);
+						})
+				)
+			);
+			setBrightnessValues(newBrightnessValues);
+		};
+
+		calculateBrightness();
 	}, [images]);
 
 	const handleSlideChange = (index) => {
@@ -77,8 +80,9 @@ const ControlledCarousel = ({ images }) => {
 				{images.map((image, index) => (
 					<div key={index}>
 						<img
-							src={URL.createObjectURL(image)}
+							src={image}
 							alt={`Slide ${index}`}
+							style={{ objectFit: "cover", height: "400px" }}
 						/>
 					</div>
 				))}

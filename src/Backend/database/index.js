@@ -71,12 +71,15 @@ const accountCount = await db.Account.count();
 // Check if products table is empty
 const productCount = await db.Products.count();
 
+// Check if variations table is empty
+const variationCount = await db.Variations.count();
+
 // Check if banner_image table is empty
 const banner_imageCount = await db.BannerImage.count();
 
 
 // If any of the tables are empty, initialize the database
-if (accountCount === 0 || productCount === 0 || banner_imageCount === 0) {
+if (accountCount === 0 || productCount === 0 || banner_imageCount === 0 || variationCount === 0) {
   console.log("Database not initialized properly, initializing now....");
   await initializeDatabase();
 }

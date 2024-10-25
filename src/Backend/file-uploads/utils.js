@@ -1,27 +1,66 @@
 import fs from "fs";
 import path from "path";
 
-async function getImageUrlData(imageFolderPath, colors) {
+async function getImageUrlDataForProduct(productId, skus) {
 	const imagesData = {};
-
+  
+	const baseImageUrl = `${process.env.HOST}:${process.env.PORT_SERVER}/images/product_images/${productId}`;
+	console.log(baseImageUrl);
+  
+	for (const sku of skus) {
+	  const skuFolderPath = path.join(
+		"images",
+		"product_images",
+		productId.toString(),
+		sku
+	  );
+	  console.log(skuFolderPath);
+  
+	  if (fs.existsSync(skuFolderPath)) {
+		console.log("exist");
+		const files = fs.readdirSync(skuFolderPath);
+  
+		imagesData[sku] = {
+		  files: files.map((file) => `${baseImageUrl}/${sku}/${file}`),
+		  names: files,
+		};
+		// console.log(imagesData);
+	  } else {
+		imagesData[sku] = {
+		  files: [],
+		  names: [],
+		};
+	  }
+	}
+	console.log("Constructed imagesData:", imagesData);
+	return imagesData;
+  }
+  
+  async function getImageUrlDataForBanner(imageFolderPath, colors) {
+	const imagesData = {};
+  
 	for (const color of colors) {
-		const colorFolderPath = path.join(imageFolderPath, color);
-
-		if (fs.existsSync(colorFolderPath)) {
-			const files = fs.readdirSync(colorFolderPath); // Read files in the color folder
-
-			imagesData[color] = {
-				files: files.map(
-					(file) =>
-						`${process.env.HOST}:${process.env.PORT_SERVER}/${imageFolderPath}/${color}/${file}`
-				),
-				names: files, // The original file names
-			};
-		}
+	  const colorFolderPath = path.join(imageFolderPath, color);
+  
+	  if (fs.existsSync(colorFolderPath)) {
+		const files = fs.readdirSync(colorFolderPath);
+  
+		imagesData[color] = {
+		  files: files.map(
+			(file) =>
+			  `${process.env.HOST}:${process.env.PORT_SERVER}/${imageFolderPath}/${color}/${file}`
+		  ),
+		  names: files,
+		};
+	  } else {
+		imagesData[color] = {
+		  files: [],
+		  names: [],
+		};
+	  }
 	}
 	return imagesData;
-}
-
+  }
 /**
  * Reconstructs the imagesData object from the files, names, and keys.
  *
@@ -75,7 +114,8 @@ function hasValidImageExtension(fileName) {
 
 export {
 	formatImageFolderPath,
-	getImageUrlData,
+	getImageUrlDataForProduct, 
+	getImageUrlDataForBanner,
 	hasValidImageExtension,
 	reconstructImagesData,
 };

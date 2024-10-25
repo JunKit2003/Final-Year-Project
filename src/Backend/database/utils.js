@@ -78,197 +78,245 @@ function withDatabaseConnectivity(dbOperation) {
 // Retrieve product based on ID
 const getProductFromDB = withDatabaseConnectivity(async (productId) => {
 	try {
-		// Fetch a single product by its ID
-		const product = await db.Products.findOne({ where: { id: productId } });
-
-		if (!product) {
-			throw new ProductNotFoundError(`Product with ID ${productId} not found.`);
-		}
-
-		// Extract just the core data (dataValues)
-		return product.get({ plain: true });
+	  // Fetch a single product by its ID, including variations
+	  const product = await db.Products.findOne({
+		where: { id: productId },
+		include: [{ model: db.Variations, as: "variations" }],
+	  });
+  
+	  if (!product) {
+		throw new ProductNotFoundError(`Product with ID ${productId} not found.`);
+	  }
+  
+	  // Extract just the core data (dataValues)
+	  return product.get({ plain: true });
 	} catch (error) {
-		throw error;
+	  throw error;
 	}
-});
+  });
 
 
 // Retrieve all products
 const getProductsFromDB = withDatabaseConnectivity(async () => {
 	try {
-		// Fetch all products
-		const products = await db.Products.findAll();
-
-		if (!products.length) {
-			throw new ProductNotFoundError();
-		}
-
-		// Extract just the core data (dataValues) from each product
-		const plainProducts = products.map((product) =>
-			product.get({ plain: true })
-		);
-
-		return plainProducts;
+	  // Fetch all products, including variations
+	  const products = await db.Products.findAll({
+		include: [{ model: db.Variations, as: "variations" }],
+	  });
+  
+	  if (!products.length) {
+		throw new ProductNotFoundError();
+	  }
+  
+	  // Extract just the core data (dataValues) from each product
+	  const plainProducts = products.map((product) =>
+		product.get({ plain: true })
+	  );
+  
+	  return plainProducts;
 	} catch (error) {
-		throw error;
+	  throw error;
 	}
-});
+  });
 
 // Retrieve product categories
 const getProductsCategoryFromDB = withDatabaseConnectivity(async () => {
 	try {
-		// Fetch distinct categories from the products table
-		const categories = await db.Products.findAll({
-			attributes: [[db.Sequelize.fn('DISTINCT', db.Sequelize.col('category')), 'category']],
-		});
-
-		// Check if any categories were found
-		if (!categories.length) {
-			throw new Error("No categories found.");
-		}
-
-		// Extract plain category values
-		const uniqueCategories = categories.map(category => category.get({ plain: true }).category);
-		return uniqueCategories;
+	  // Fetch distinct categories from the products table
+	  const categories = await db.Products.findAll({
+		attributes: [
+		  [db.Sequelize.fn("DISTINCT", db.Sequelize.col("category")), "category"],
+		],
+	  });
+  
+	  // Check if any categories were found
+	  if (!categories.length) {
+		throw new Error("No categories found.");
+	  }
+  
+	  // Extract plain category values
+	  const uniqueCategories = categories.map(
+		(category) => category.get({ plain: true }).category
+	  );
+	  return uniqueCategories;
 	} catch (error) {
-		throw new DatabaseConnectionError("Failed to fetch product categories.");
+	  throw new DatabaseConnectionError("Failed to fetch product categories.");
 	}
-});
+  });
 
 
 // Retrieve product brands
 const getProductBrandsFromDB = withDatabaseConnectivity(async () => {
 	try {
-		// Fetch distinct brands from the products table
-		const brands = await db.Products.findAll({
-			attributes: [[db.Sequelize.fn('DISTINCT', db.Sequelize.col('brand')), 'brand']],
-		});
-
-		// Check if any brands were found
-		if (!brands.length) {
-			throw new Error("No brands found.");
-		}
-
-		// Extract plain brand values
-		const uniqueBrands = brands.map(brand => brand.get({ plain: true }).brand);
-		return uniqueBrands;
+	  // Fetch distinct brands from the products table
+	  const brands = await db.Products.findAll({
+		attributes: [
+		  [db.Sequelize.fn("DISTINCT", db.Sequelize.col("brand")), "brand"],
+		],
+	  });
+  
+	  // Check if any brands were found
+	  if (!brands.length) {
+		throw new Error("No brands found.");
+	  }
+  
+	  // Extract plain brand values
+	  const uniqueBrands = brands.map(
+		(brand) => brand.get({ plain: true }).brand
+	  );
+	  return uniqueBrands;
 	} catch (error) {
-		throw new DatabaseConnectionError("Failed to fetch product brands.");
+	  throw new DatabaseConnectionError("Failed to fetch product brands.");
 	}
-});
+  });
 
 
 // Add a new product
 const addProductToDB = withDatabaseConnectivity(async (productDetails) => {
 	try {
-		const {
-			category,
-			name,
-			brand,
-			colors,
-			price,
-			description,
-			image_folder_path,
-			status,
-		} = productDetails;
-
-		// Check if product already exists
-		const existingProduct = await db.Products.findOne({ where: { name } });
-
-		if (existingProduct) {
-			throw new ProductExistsError();
-		}
-
-		// Sort colors alphabetically
-		const sortedColors = JSON.parse(colors).sort();
-
-		await db.Products.create({
-			category,
-			name,
-			brand,
-			colors: sortedColors,
-			price,
-			description,
-			image_folder_path,
-			status,
-		});
+	  const { category, name, brand, description } = productDetails;
+  
+	  // Check if product already exists
+	  const existingProduct = await db.Products.findOne({ where: { name } });
+  
+	  if (existingProduct) {
+		throw new ProductExistsError();
+	  }
+  
+	  // Create new product
+	  const newProduct = await db.Products.create({
+		category,
+		name,
+		brand,
+		description,
+	  });
+  
+	  return newProduct; // Return the created product
 	} catch (error) {
-		if (error instanceof db.Sequelize.ValidationError) {
-			throw new InputValidationError(
-				"Invalid input: " +
-					error.errors.map((e) => e.message).join(", ")
-			);
-		} else {
-			throw error;
-		}
+	  if (error instanceof db.Sequelize.ValidationError) {
+		throw new InputValidationError(
+		  "Invalid input: " + error.errors.map((e) => e.message).join(", ")
+		);
+	  } else {
+		throw error;
+	  }
 	}
-});
+  });
+  
+  // Add new variations
+  const addVariationsToDB = withDatabaseConnectivity(async (variations) => {
+	try {
+	  await db.Variations.bulkCreate(variations);
+	} catch (error) {
+	  if (error instanceof db.Sequelize.ValidationError) {
+		throw new InputValidationError(
+		  "Invalid input: " + error.errors.map((e) => e.message).join(", ")
+		);
+	  } else {
+		throw error;
+	  }
+	}
+  });
 
 // Update a product
 const updateProductToDB = withDatabaseConnectivity(
 	async (id, productDetails) => {
-		try {
-			const {
-				category,
-				name,
-				brand,
-				price,
-				colors,
-				description,
-				image_folder_path,
-				hasImageChanges,
-				status,
-			} = productDetails;
-
-			const product = await db.Products.findByPk(id);
-			if (!product) {
-				throw new ProductNotFoundError();
-			}
-
-			// Sort colors alphabetically
-			const sortedColors = JSON.parse(colors).sort();
-
-			await product.update(
-				{
-					category,
-					name,
-					brand,
-					colors: sortedColors,
-					price,
-					description,
-					image_folder_path,
-					status,
-				},
-				{
-					hasImageChanges, // Pass hasImageChanges to control beforeUpdate behavior
-				}
-			);
-		} catch (error) {
-			if (error instanceof db.Sequelize.ValidationError) {
-				throw new InputValidationError(
-					"Invalid input: " +
-						error.errors.map((e) => e.message).join(", ")
-				);
-			} else {
-				throw error;
-			}
+	  try {
+		const { category, name, brand, description } = productDetails;
+  
+		const product = await db.Products.findByPk(id);
+		if (!product) {
+		  throw new ProductNotFoundError();
 		}
+  
+		await product.update({
+		  category,
+		  name,
+		  brand,
+		  description,
+		});
+	  } catch (error) {
+		if (error instanceof db.Sequelize.ValidationError) {
+		  throw new InputValidationError(
+			"Invalid input: " + error.errors.map((e) => e.message).join(", ")
+		  );
+		} else {
+		  throw error;
+		}
+	  }
 	}
-);
+  );
+  
+  // Update variations for a product
+  const updateVariationsToDB = withDatabaseConnectivity(
+	async (productId, variations) => {
+	  try {
+		// Fetch existing variations for the product
+		const existingVariations = await db.Variations.findAll({
+		  where: { productId },
+		});
+  
+		const existingVariationIds = existingVariations.map((v) => v.id);
+  
+		const receivedVariationIds = variations
+		  .filter((v) => v.id)
+		  .map((v) => v.id);
+  
+		// Variations to delete (existing variations not in received list)
+		const variationsToDelete = existingVariations.filter(
+		  (v) => !receivedVariationIds.includes(v.id)
+		);
+  
+		// Variations to update (existing variations in received list)
+		const variationsToUpdate = variations.filter((v) => v.id);
+  
+		// Variations to create (new variations without id)
+		const variationsToCreate = variations.filter((v) => !v.id);
+  
+		// Delete variations
+		for (let variation of variationsToDelete) {
+		  await variation.destroy();
+		}
+  
+		// Update variations
+		for (let variationData of variationsToUpdate) {
+		  const variation = await db.Variations.findByPk(variationData.id);
+		  if (variation) {
+			await variation.update(variationData);
+		  }
+		}
+  
+		// Create new variations
+		for (let variationData of variationsToCreate) {
+		  variationData.productId = productId;
+		  await db.Variations.create(variationData);
+		}
+	  } catch (error) {
+		if (error instanceof db.Sequelize.ValidationError) {
+		  throw new InputValidationError(
+			"Invalid input: " + error.errors.map((e) => e.message).join(", ")
+		  );
+		} else {
+		  throw error;
+		}
+	  }
+	}
+  );
+  
 
 // Delete a product
 const deleteProductFromDB = withDatabaseConnectivity(async (id) => {
 	try {
-		const product = await db.Products.findByPk(id);
-		if (!product) {
-			throw new ProductNotFoundError();
-		}
-
-		await product.destroy();
+	  const product = await db.Products.findByPk(id);
+	  if (!product) {
+		throw new ProductNotFoundError();
+	  }
+  
+	  await product.destroy();
 	} catch (error) {
-		throw error;
+	  throw error;
 	}
-});
+  });
 
 // Banner-related functions
 
@@ -402,14 +450,16 @@ const getUserByUsernameOrEmail = withDatabaseConnectivity(async (usernameOrEmail
 // Export all errors and database utility functions as required
 export {
     // Exporting product utility functions
-    pingDatabase,
+	pingDatabase,
 	getProductFromDB,
-    getProductsFromDB,
-    addProductToDB,
-    updateProductToDB,
-    deleteProductFromDB,
-    getProductsCategoryFromDB,
-    getProductBrandsFromDB,
+	getProductsFromDB,
+	addProductToDB,
+	addVariationsToDB, // Newly added
+	updateProductToDB,
+	updateVariationsToDB, // Newly added
+	deleteProductFromDB,
+	getProductsCategoryFromDB,
+	getProductBrandsFromDB,
 
     // Exporting banner utility functions
     getBannersFromDB,

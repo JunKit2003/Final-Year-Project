@@ -11,196 +11,89 @@ import {
 } from "@mui/material";
 import { Cancel as CancelIcon, Add as AddIcon } from "@mui/icons-material";
 
-// Helper function to remove the file extension from a file name
-const removeFileExtension = (fileName) => {
-	const dotIndex = fileName.lastIndexOf(".");
-	return dotIndex !== -1 ? fileName.slice(0, dotIndex) : fileName;
-};
-
-// Helper function to extract the file extension
-const getFileExtension = (fileName) => {
-	const dotIndex = fileName.lastIndexOf(".");
-	return dotIndex !== -1 ? fileName.slice(dotIndex) : "";
-};
-
 const ImageUploadUI = ({
-	colors,
-	existingImagesData = {}, // Existing images data passed from the parent component
+	variations = [], // Default to an empty array
+	existingImagesData = {}, // Default to an empty object
 	handleClose,
 	handleSave,
 }) => {
-	const [selectedColors, setSelectedColors] = useState([]); // Track selected colors
-	const [images, setImages] = useState({}); // Track uploaded images for each color
-	const [imageNames, setImageNames] = useState({}); // Track image names
-	const [originalExtensions, setOriginalExtensions] = useState({}); // Store original file extensions
+	const [selectedVariations, setSelectedVariations] = useState([]);
+	const [images, setImages] = useState({});
 
-	// Load existing images and names when the component first mounts or when existingImagesData changes
+	// Load existing images on component mount or when existingImagesData changes
 	useEffect(() => {
+		console.log("Received existingImagesData in ImageUploadUI:", existingImagesData);
 		if (Object.keys(existingImagesData).length > 0) {
-			// Set the files for each color in the images state
-			setImages(
-				Object.keys(existingImagesData).reduce((acc, color) => {
-					return {
-						...acc,
-						[color]: existingImagesData[color]?.files || [], // Only store the files
-					};
-				}, {})
-			);
-
-			// Set the names for each color in the imageNames state
-			setImageNames(
-				Object.keys(existingImagesData).reduce((acc, color) => {
-					return {
-						...acc,
-						[color]:
-							existingImagesData[color]?.names.map((name) =>
-								removeFileExtension(name)
-							) || [], // Store names without extensions
-					};
-				}, {})
-			);
-
-			// Store the original extensions
-			setOriginalExtensions(
-				Object.keys(existingImagesData).reduce((acc, color) => {
-					return {
-						...acc,
-						[color]:
-							existingImagesData[color]?.names.map((name) =>
-								getFileExtension(name)
-							) || [], // Store the extensions
-					};
-				}, {})
-			);
-
-			// Automatically select colors that have existing images
-			setSelectedColors(Object.keys(existingImagesData));
+			setImages(existingImagesData);
+			setSelectedVariations(Object.keys(existingImagesData));
 		}
 	}, [existingImagesData]);
 
-	// Handle color selection via checkbox
-	const handleColorToggle = (color) => {
-		setSelectedColors((prev) =>
-			prev.includes(color)
-				? prev.filter((c) => c !== color)
-				: [...prev, color]
+	// Toggle variation selection
+	const handleVariationToggle = (sku) => {
+		setSelectedVariations((prev) =>
+			prev.includes(sku) ? prev.filter((v) => v !== sku) : [...prev, sku]
 		);
 	};
 
-	// Handle file upload, updating the images and setting default names
-	const handleFileChange = (color, event) => {
+	// Handle file upload: Add new images to the existing ones
+	const handleFileChange = (sku, event) => {
 		const files = Array.from(event.target.files);
 
-		// Merge new files with the existing ones for this color
+		setImages((prevImages) => ({
+			...prevImages,
+			[sku]: {
+				files: [...(prevImages[sku]?.files || []), ...files], // Append new files
+				names: [
+					...(prevImages[sku]?.names || []),
+					...files.map((file) => file.name), // Append new names
+				],
+			},
+		}));
+	};
+
+	// Remove an image by index
+	const handleRemoveImage = (sku, index) => {
 		setImages((prevImages) => {
-			const currentImages = Array.isArray(prevImages[color])
-				? prevImages[color]
-				: [];
-			const newImages = [...currentImages, ...files]; // Merge existing and new files
+			const updatedFiles = prevImages[sku].files.filter((_, i) => i !== index);
+			const updatedNames = prevImages[sku].names.filter((_, i) => i !== index);
 
 			return {
 				...prevImages,
-				[color]: newImages, // Ensure previous images are not overwritten
-			};
-		});
-
-		// Update image names and extensions accordingly
-		setImageNames((prevNames) => {
-			const currentNames = prevNames[color] || [];
-			const startIndex = currentNames.length;
-
-			const newNames = [
-				...currentNames,
-				...files.map((file, idx) => `${color}_${startIndex + idx + 1}`), // Generate new image names without extension
-			];
-
-			return {
-				...prevNames,
-				[color]: newNames,
-			};
-		});
-
-		setOriginalExtensions((prevExtensions) => {
-			const currentExtensions = prevExtensions[color] || [];
-
-			const newExtensions = [
-				...currentExtensions,
-				...files.map((file) => getFileExtension(file.name)),
-			];
-
-			return {
-				...prevExtensions,
-				[color]: newExtensions,
+				[sku]: {
+					files: updatedFiles,
+					names: updatedNames,
+				},
 			};
 		});
 	};
 
-	// Handle changing the image name, preserving the original extension
-	const handleImageNameChange = (color, index, newName) => {
-		setImageNames((prevNames) => ({
-			...prevNames,
-			[color]: prevNames[color].map((name, i) =>
-				i === index ? newName : name
-			),
-		}));
-	};
-
-	// Handle removing an image from the selected color
-	const handleRemoveImage = (color, index) => {
-		setImages((prevImages) => ({
-			...prevImages,
-			[color]: prevImages[color].filter((_, i) => i !== index),
-		}));
-
-		// Update the names and extensions accordingly
-		setImageNames((prevNames) => ({
-			...prevNames,
-			[color]: prevNames[color].filter((_, i) => i !== index),
-		}));
-		setOriginalExtensions((prevExtensions) => ({
-			...prevExtensions,
-			[color]: prevExtensions[color].filter((_, i) => i !== index),
-		}));
-	};
-
-	// Handle Save
+	// Save the updated images data
 	const saveImages = () => {
-		const colorImages = Object.keys(images).reduce((acc, color) => {
-			acc[color] = {
-				files: images[color],
-				names: imageNames[color].map(
-					(name, idx) => `${name}${originalExtensions[color][idx]}`
-				), // Combine name with its original extension
-			};
-			return acc;
-		}, {});
-
-		handleSave(colorImages);
+		handleSave(images);
+		handleClose();
 	};
 
 	return (
 		<Box sx={{ p: 3 }}>
 			<Typography variant="h6" sx={{ mb: 2 }}>
-				Upload Images for variations
+				Upload Images for Variations
 			</Typography>
 
-			{/* Checkboxes to toggle image upload sections for each color */}
-			{colors.map((color) => (
-				<Box key={color} sx={{ mb: 4 }}>
+			{variations.map((variation) => (
+				<Box key={variation.sku} sx={{ mb: 4 }}>
 					<FormControlLabel
 						control={
 							<Checkbox
-								checked={selectedColors.includes(color)}
-								onChange={() => handleColorToggle(color)}
+								checked={selectedVariations.includes(variation.sku)}
+								onChange={() => handleVariationToggle(variation.sku)}
 							/>
 						}
-						label={`Upload Images for ${color}`}
+						label={`Upload Images for ${variation.sku}`}
 					/>
 
-					{/* Show image upload section when color is selected */}
-					{selectedColors.includes(color) && (
+					{selectedVariations.includes(variation.sku) && (
 						<Box sx={{ mt: 2, ml: 4 }}>
-							{/* Display uploaded images as tiles for the color */}
 							<Box
 								sx={{
 									display: "flex",
@@ -209,105 +102,69 @@ const ImageUploadUI = ({
 									mt: 2,
 								}}
 							>
-								{Array.isArray(images[color]) &&
-									images[color].map((file, index) => (
+								{images[variation.sku]?.files.map((file, index) => (
+									<Box
+										key={index}
+										sx={{
+											width: "100px",
+											height: "160px",
+											display: "flex",
+											flexDirection: "column",
+											alignItems: "center",
+											border: "1px solid lightgrey",
+											borderRadius: "8px",
+											p: 1,
+										}}
+									>
 										<Box
-											key={index}
-											sx={{
-												width: "100px",
-												height: "160px",
-												display: "flex",
-												flexDirection: "column",
-												alignItems: "center",
-												border: "1px solid lightgrey",
-												borderRadius: "8px",
-												p: 1,
-											}}
+											component="img"
+											src={
+												file instanceof File
+													? URL.createObjectURL(file)
+													: file
+											}
+											alt={`Preview of ${file.name || "uploaded image"}`}
+											sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+										/>
+
+										<TextField
+											label="Image Name"
+											value={images[variation.sku]?.names[index] || ""}
+											onChange={(e) =>
+												setImages((prevImages) => ({
+													...prevImages,
+													[variation.sku]: {
+														...prevImages[variation.sku],
+														names: prevImages[variation.sku].names.map(
+															(name, i) => (i === index ? e.target.value : name)
+														),
+													},
+												}))
+											}
+											sx={{ mb: 1, width: "100%" }}
+										/>
+
+										<IconButton
+											size="small"
+											onClick={() => handleRemoveImage(variation.sku, index)}
 										>
-											{/* Image Preview */}
-											<Box
-												sx={{
-													width: "100px",
-													height: "100px",
-													overflow: "hidden",
-													borderRadius: "8px",
-													mb: 1,
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "center",
-												}}
-											>
-												<Box
-													component="img"
-													src={
-														file instanceof File
-															? URL.createObjectURL(
-																	file
-															  ) // Preview new files
-															: file // Existing files are assumed to be URLs
-													}
-													alt={`Preview of ${
-														file.name ||
-														"uploaded image"
-													}`}
-													sx={{
-														width: "100%",
-														height: "100%",
-														objectFit: "cover",
-													}}
-												/>
-											</Box>
-
-											{/* Image Name Field */}
-											<TextField
-												label="Image Name"
-												value={
-													imageNames[color]?.[
-														index
-													] || ""
-												}
-												onChange={(e) =>
-													handleImageNameChange(
-														color,
-														index,
-														e.target.value
-													)
-												}
-												sx={{ mb: 1, width: "100%" }}
-											/>
-
-											{/* Remove Image Button */}
-											<IconButton
-												size="small"
-												onClick={() =>
-													handleRemoveImage(
-														color,
-														index
-													)
-												}
-											>
-												<CancelIcon fontSize="small" />
-											</IconButton>
-										</Box>
-									))}
+											<CancelIcon fontSize="small" />
+										</IconButton>
+									</Box>
+								))}
 							</Box>
 
-							{/* Add more images button */}
 							<Box sx={{ mt: 2, textAlign: "center" }}>
 								<input
 									type="file"
 									accept="image/*"
 									style={{ display: "none" }}
-									id={`file-upload-${color}`}
+									id={`file-upload-${variation.sku}`}
 									multiple
-									onChange={(e) => handleFileChange(color, e)}
+									onChange={(e) => handleFileChange(variation.sku, e)}
 								/>
-								<label htmlFor={`file-upload-${color}`}>
-									<Fab
-										color="primary"
-										component="span"
-										size="small"
-									>
+								<label htmlFor={`file-upload-${variation.sku}`}>
+									<Fab color="primary" component="span" size="small">
 										<AddIcon />
 									</Fab>
 								</label>
@@ -317,21 +174,11 @@ const ImageUploadUI = ({
 				</Box>
 			))}
 
-			<Box
-				sx={{ mt: 4, display: "flex", justifyContent: "space-between" }}
-			>
-				<Button
-					onClick={handleClose}
-					color="primary"
-					variant="outlined"
-				>
+			<Box sx={{ mt: 4, display: "flex", justifyContent: "space-between" }}>
+				<Button onClick={handleClose} variant="outlined">
 					Close
 				</Button>
-				<Button
-					onClick={saveImages}
-					color="primary"
-					variant="contained"
-				>
+				<Button onClick={saveImages} variant="contained">
 					Save Images
 				</Button>
 			</Box>

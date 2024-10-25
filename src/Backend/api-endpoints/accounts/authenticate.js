@@ -1,8 +1,8 @@
 export default async function authenticate(req, res) {
     try {
         
-        console.log("In Authenticate");
-        console.log(req.session);
+        // console.log("In Authenticate");
+        // console.log(req.session);
 
         if (!req.session.user) {
             return res.status(401).send({ message: 'User not logged in' }); // 401 Unauthorized

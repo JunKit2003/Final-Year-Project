@@ -29,7 +29,6 @@ router.post('/product/getCategories', getProductCategories);
 router.post('/product/getBrands', getProductBrands);
 
 
-
 // Banner-related routes
 router.post('/banner/add', uploadMultiple, addBanner);
 router.post('/banner/get', getBanners);
