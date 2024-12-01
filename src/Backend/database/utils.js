@@ -145,31 +145,30 @@ const getProductsCategoryFromDB = withDatabaseConnectivity(async () => {
   });
 
 
-// Retrieve product brands
-const getProductBrandsFromDB = withDatabaseConnectivity(async () => {
+  const getProductBrandsFromDB = withDatabaseConnectivity(async () => {
 	try {
-	  // Fetch distinct brands from the products table
-	  const brands = await db.Products.findAll({
-		attributes: [
-		  [db.Sequelize.fn("DISTINCT", db.Sequelize.col("brand")), "brand"],
-		],
-	  });
+	  // Use a raw SQL query to fetch distinct brands, trimming whitespace
+	  const [results] = await db.sequelize.query(`
+		SELECT DISTINCT TRIM(brand) AS brand
+		FROM products
+		WHERE brand IS NOT NULL AND brand != ''
+	  `);
   
-	  // Check if any brands were found
+	  // Extract brand values and log for debugging
+	  const brands = results.map((row) => row.brand);
+	  console.log("Distinct Brands Retrieved:", brands);
+  
 	  if (!brands.length) {
 		throw new Error("No brands found.");
 	  }
   
-	  // Extract plain brand values
-	  const uniqueBrands = brands.map(
-		(brand) => brand.get({ plain: true }).brand
-	  );
-	  return uniqueBrands;
+	  return brands;
 	} catch (error) {
 	  throw new DatabaseConnectionError("Failed to fetch product brands.");
 	}
   });
-
+  
+  
 
 // Add a new product
 const addProductToDB = withDatabaseConnectivity(async (productDetails) => {
