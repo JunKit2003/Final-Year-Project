@@ -7,7 +7,7 @@ import {
   Card,
   CardContent,
   Button,
-  CardMedia, // Add this import
+  CardMedia,
 } from "@mui/material";
 
 import Slider from "react-slick";
@@ -177,13 +177,14 @@ function Catalog() {
       <Box sx={{ padding: 4 }}>
         <Grid container spacing={4}>
           {filteredProducts.map((product, index) => {
-            // Extract all images from all variations
+            // Extract unique images from all variations
             const variationImages = product.variations.flatMap(
               (variation) => variation.images?.files || []
             );
+            const uniqueVariationImages = Array.from(new Set(variationImages));
 
             // Fallback to default image if no images are found
-            const hasImages = variationImages.length > 0;
+            const hasImages = uniqueVariationImages.length > 0;
 
             const prices = product.variations.map((v) => parseFloat(v.price));
             const minPrice = Math.min(...prices);
@@ -194,19 +195,29 @@ function Catalog() {
                   <Card>
                     {/* Product Images Carousel */}
                     {hasImages ? (
-                      <Slider {...settings}>
-                        {variationImages.map((image, idx) => (
-                          <div key={idx}>
-                            <CardMedia
-                              component="img"
-                              height="200"
-                              image={image}
-                              alt={`Product Image ${idx + 1}`}
-                              style={{ objectFit: "contain" }}
-                            />
-                          </div>
-                        ))}
-                      </Slider>
+                      uniqueVariationImages.length > 1 ? (
+                        <Slider {...settings}>
+                          {uniqueVariationImages.map((image, idx) => (
+                            <div key={idx}>
+                              <CardMedia
+                                component="img"
+                                height="200"
+                                image={image}
+                                alt={`Product Image ${idx + 1}`}
+                                style={{ objectFit: "contain" }}
+                              />
+                            </div>
+                          ))}
+                        </Slider>
+                      ) : (
+                        <CardMedia
+                          component="img"
+                          height="200"
+                          image={uniqueVariationImages[0]}
+                          alt="Product Image"
+                          style={{ objectFit: "contain" }}
+                        />
+                      )
                     ) : (
                       <CardMedia
                         component="img"
@@ -216,6 +227,7 @@ function Catalog() {
                         style={{ objectFit: "contain" }}
                       />
                     )}
+
 
                     <CardContent>
                       <Typography variant="h5">{product.name}</Typography>

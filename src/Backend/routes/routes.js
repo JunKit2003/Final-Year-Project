@@ -11,7 +11,10 @@ import {
     deleteBanner,
     login,
     logout,
-    authenticate
+    authenticate,
+    addToCart,
+    getCartItems,
+    removeCartItem
 } from '../api-endpoints/index.js'; // Import necessary endpoints
 
 import { uploadMultiple } from '../file-uploads/multerConfig.js';
@@ -40,6 +43,15 @@ router.delete('/banner/delete/:id', deleteBanner);
 router.post('/account/login', login);
 router.post('/account/logout', logout);
 router.post('/account/authenticate', authenticate);
+
+
+
+// Cart-related routes
+// Account-related routes
+router.post('/cart/add', addToCart);             // Add an item to the cart
+router.get('/cart/:user_id', getCartItems);      // Get all cart items for a user
+router.delete('/cart/:cart_item_id', removeCartItem); // Remove a specific cart item
+
 
 
 export default router;

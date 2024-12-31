@@ -20,3 +20,8 @@ export { default as deleteBanner } from './banners/deleteBanner.js';
 export { default as login } from './accounts/login.js';
 export { default as logout } from './accounts/logout.js';
 export { default as authenticate } from './accounts/authenticate.js';
+
+// Cart related exports
+export { default as addToCart } from './cart/addToCart.js';
+export { default as getCartItems } from './cart/getCartItems.js';
+export { default as removeCartItem } from './cart/removeCartItems.js';

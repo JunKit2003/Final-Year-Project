@@ -17,8 +17,9 @@ import {
 	  // Send response with the unique brands
 	  res.status(200).send({
 		message: "Product brands retrieved successfully!",
-		brands: brands.map((brand) => brand.brand), // Adjusted to match your data structure
+		brands: brands, // Directly send the brands array
 	  });
+	  
 	} catch (error) {
 	  if (error instanceof DatabaseConnectionError) {
 		res.status(500).send({ message: "Unable to connect to the database!" });

@@ -1,4 +1,11 @@
 // Importing Database Object
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+// or if you prefer the promise version explicitly:
+// import { promises as fsPromises } from 'fs';
+// const { rm } = fsPromises;
+
 import { db } from "./index.js";
 
 // Custom Error classes
@@ -145,31 +152,31 @@ const getProductsCategoryFromDB = withDatabaseConnectivity(async () => {
   });
 
 
-// Retrieve product brands
-const getProductBrandsFromDB = withDatabaseConnectivity(async () => {
+  const getProductBrandsFromDB = withDatabaseConnectivity(async () => {
 	try {
-	  // Fetch distinct brands from the products table
-	  const brands = await db.Products.findAll({
-		attributes: [
-		  [db.Sequelize.fn("DISTINCT", db.Sequelize.col("brand")), "brand"],
-		],
-	  });
+	  // Use a raw SQL query to fetch distinct brands, trimming whitespace
+	  const [results] = await db.sequelize.query(`
+		SELECT DISTINCT TRIM(brand) AS brand
+		FROM products
+		WHERE brand IS NOT NULL AND brand != ''
+	  `);
   
-	  // Check if any brands were found
+	  // Extract brand values and log for debugging
+	  const brands = results.map((row) => row.brand);
+	  console.log("Distinct Brands Retrieved:", brands);
+  
 	  if (!brands.length) {
 		throw new Error("No brands found.");
 	  }
   
-	  // Extract plain brand values
-	  const uniqueBrands = brands.map(
-		(brand) => brand.get({ plain: true }).brand
-	  );
-	  return uniqueBrands;
+	  return brands;
 	} catch (error) {
 	  throw new DatabaseConnectionError("Failed to fetch product brands.");
 	}
   });
-
+  
+  
+  
 
 // Add a new product
 const addProductToDB = withDatabaseConnectivity(async (productDetails) => {
@@ -306,18 +313,22 @@ const updateProductToDB = withDatabaseConnectivity(
 
 // Delete a product
 const deleteProductFromDB = withDatabaseConnectivity(async (id) => {
-	try {
-	  const product = await db.Products.findByPk(id);
-	  if (!product) {
-		throw new ProductNotFoundError();
-	  }
-  
-	  await product.destroy();
-	} catch (error) {
-	  throw error;
-	}
-  });
+  try {
+    const product = await db.Products.findByPk(id);
+    if (!product) {
+      throw new ProductNotFoundError();
+    }
+    const folderPath = path.join("images", "product_images", id.toString());
+    if (fs.existsSync(folderPath)) {
+      await fs.promises.rm(folderPath, { recursive: true, force: true });
+    }
+    await product.destroy();
+  } catch (error) {
+    throw error;
+  }
+});
 
+  
 // Banner-related functions
 
 // Retrieve all banners
@@ -447,6 +458,98 @@ const getUserByUsernameOrEmail = withDatabaseConnectivity(async (usernameOrEmail
     }
 });
 
+
+
+
+const addCartItemToDB = withDatabaseConnectivity(
+	async (userId, productVariationId, quantity) => {
+	  try {
+		if (!userId || !productVariationId || !quantity) {
+		  throw new InputValidationError(
+			"Missing required fields: 'userId', 'productVariationId', or 'quantity'."
+		  );
+		}
+  
+		const [cartItem, created] = await db.Cart.findOrCreate({
+		  where: { accountId: userId, variationId: productVariationId },
+		  defaults: { quantity },
+		});
+  
+		if (!created) {
+		  cartItem.quantity += Number(quantity);
+		  await cartItem.save();
+		}
+	  } catch (error) {
+		if (error instanceof db.Sequelize.ValidationError) {
+		  throw new InputValidationError(
+			"Invalid input: " + error.errors.map((e) => e.message).join(", ")
+		  );
+		} else {
+		  throw error;
+		}
+	  }
+	}
+  );
+  
+  
+  /**
+   * Get cart items for a specific user:
+   * This returns the full cart, including any product/variation associations
+   * that you want to load.
+   */
+  const getCartItemsFromDB = withDatabaseConnectivity(async (userId) => {
+	try {
+	  // Basic validation
+	  if (!userId) {
+		throw new InputValidationError("Missing required field: userId.");
+	  }
+  
+	  // Using Sequelize to fetch all Cart items for the user
+	  // Include Variation + nested Product if needed
+	  const cartItems = await db.Cart.findAll({
+		where: { accountId: userId },
+		include: [
+		  {
+			model: db.Variations,
+			as: "variation",
+			include: [
+			  {
+				model: db.Products,
+				as: "product",
+			  },
+			],
+		  },
+		],
+	  });
+  
+	  // Convert to plain object array if desired
+	  const plainCartItems = cartItems.map((item) => item.get({ plain: true }));
+	  return plainCartItems;
+	} catch (error) {
+	  throw error;
+	}
+  });
+  
+  /**
+   * Remove a specific cart item by its cart ID
+   * (If you store cart items by `id`, you can remove by that ID).
+   */
+  const removeCartItemFromDB = withDatabaseConnectivity(async (cartItemId) => {
+	try {
+	  // Basic validation
+	  if (!cartItemId) {
+		throw new InputValidationError("Missing required field: cartItemId.");
+	  }
+  
+	  // Attempt to destroy the cart item
+	  await db.Cart.destroy({
+		where: { id: cartItemId },
+	  });
+	} catch (error) {
+	  throw error;
+	}
+  });
+
 // Export all errors and database utility functions as required
 export {
     // Exporting product utility functions
@@ -470,6 +573,11 @@ export {
 
     // // Exporting account utility functions
     getUserByUsernameOrEmail,  // Ensure this is only here once
+
+	// Cart utilities
+	addCartItemToDB,
+	getCartItemsFromDB,
+	removeCartItemFromDB,
 
     // Exporting error classes
     DatabaseError,
