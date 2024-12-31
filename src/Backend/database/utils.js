@@ -175,8 +175,6 @@ const getProductsCategoryFromDB = withDatabaseConnectivity(async () => {
 	}
   });
   
-  
-  
 
 // Add a new product
 const addProductToDB = withDatabaseConnectivity(async (productDetails) => {
