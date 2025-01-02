@@ -10,6 +10,9 @@ const useGlobalNavigation = () => {
   const goToAdminPage = () => navigate('/admin');
   const goToAboutPage = () => navigate('/about');
   const goToLoginPage = () => navigate('/login');
+  const goToSignupPage = () => navigate('/signup');
+  const goToCartPage = () => navigate('/cart')
+  const goToPasswordResetPage = () => navigate('/passwordReset')
   const goToViewProductPage = (productId) => navigate(`/viewProduct/${productId}`); // Accept productId
   const goToHomePage = () => navigate('/');
 
@@ -19,7 +22,10 @@ const useGlobalNavigation = () => {
     goToHomePage,
     goToCatalogPage,
     goToLoginPage,
+    goToSignupPage,
     goToViewProductPage,
+    goToCartPage,
+    goToPasswordResetPage,
   };
 };
 

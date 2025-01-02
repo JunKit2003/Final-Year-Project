@@ -18,6 +18,13 @@ export default (sequelize, DataTypes) => {
         },
         onDelete: "CASCADE", // Ensures variations are removed if product is deleted
       },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notEmpty: { msg: "Name must not be empty!" },
+        },
+      },
       sku: {
         type: DataTypes.STRING,
         allowNull: false,

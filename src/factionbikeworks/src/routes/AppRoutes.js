@@ -9,7 +9,10 @@ const About = lazy(() => import('../pages/About.js'));
 const AdminPage = lazy(() => import('../pages/Admin/AdminPage.js')); 
 const Catalog = lazy(() => import('../pages/Catalog.js'));
 const Login = lazy(() => import('../pages/Login.js'));
+const Signup = lazy(() => import('../pages/Signup.js'));
 const ViewProduct = lazy(() => import('../pages/ViewProduct.js'));
+const Cart = lazy(() => import('../pages/Cart.js'));
+const PasswordReset = lazy(() => import('../pages/PasswordReset.js'));
 
 const AppRoutes = () => {
   return (
@@ -20,7 +23,11 @@ const AppRoutes = () => {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/catalog" element={<Catalog />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/PasswordReset" element={<PasswordReset />} />
         <Route path="/viewProduct/:productId" element={<ViewProduct />} />
+        
       </Routes>
     </Suspense>
   );

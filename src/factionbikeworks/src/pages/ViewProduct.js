@@ -59,11 +59,41 @@ const ViewProduct = () => {
 
   // Correctly access images using the SKU as the key
   const variationImages = selectedVariation.images?.files || [];
-
   const defaultImageUrl = "https://via.placeholder.com/300";
 
   const handleVariationChange = (event) => {
     setSelectedVariationIndex(event.target.value);
+  };
+
+  // ─────────────────────────────────────────────────────────────────
+  //  ADD TO CART HANDLER
+  // ─────────────────────────────────────────────────────────────────
+  const handleAddToCart = async () => {
+    try {
+      // In a real application, you'll pull this from auth context or localStorage
+      const userId = localStorage.getItem("userId") || 1; 
+
+      await axios.post(
+        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/add`,
+        {
+          user_id: userId,
+          variation_id: selectedVariation.id,
+          quantity: 1, // or any quantity you'd like
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      console.log("Item added to cart successfully!");
+      // Optionally show a success message to the user or update cart state
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      // Optionally show an error message to the user
+    }
   };
 
   const settings = {
@@ -87,17 +117,13 @@ const ViewProduct = () => {
           alignItems: "center",
         }}
       >
-        <Paper
-          elevation={3}
-          sx={{ padding: 3, width: "80%", maxWidth: "800px" }}
-        >
+        <Paper elevation={3} sx={{ padding: 3, width: "80%", maxWidth: "800px" }}>
           <Grid container spacing={4}>
             <Grid item xs={12} md={6}>
               <Card>
-                {/* Carousel to display multiple images */}
-                <Slider {...settings}>
-                  {variationImages.length > 0 ? (
-                    variationImages.map((image, index) => (
+                {variationImages.length > 1 ? (
+                  <Slider {...settings}>
+                    {variationImages.map((image, index) => (
                       <div key={index}>
                         <img
                           src={image}
@@ -109,21 +135,33 @@ const ViewProduct = () => {
                           }}
                         />
                       </div>
-                    ))
-                  ) : (
-                    <div>
-                      <img
-                        src={defaultImageUrl}
-                        alt="Default"
-                        style={{
-                          width: "100%",
-                          height: "400px",
-                          objectFit: "contain",
-                        }}
-                      />
-                    </div>
-                  )}
-                </Slider>
+                    ))}
+                  </Slider>
+                ) : variationImages.length === 1 ? (
+                  <div>
+                    <img
+                      src={variationImages[0]}
+                      alt={`Variation ${selectedVariation.sku} - Single Image`}
+                      style={{
+                        width: "100%",
+                        height: "400px",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <img
+                      src={defaultImageUrl}
+                      alt="Default"
+                      style={{
+                        width: "100%",
+                        height: "400px",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </div>
+                )}
               </Card>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -154,14 +192,14 @@ const ViewProduct = () => {
                   >
                     {variations.map((variation, index) => (
                       <MenuItem key={index} value={index}>
-                        {variation.sku} - RM{variation.price}
+                        {variation.name} - RM{variation.price}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
 
                 {/* Variation Details */}
-                <Typography variant="h5" color="primary" gutterBottom>
+                <Typography variant="h5" color="primary" gutterBottom sx={{ mt: 2 }}>
                   Price: RM{selectedVariation.price}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
@@ -179,6 +217,7 @@ const ViewProduct = () => {
                   color="primary"
                   sx={{ mt: 2 }}
                   disabled={selectedVariation.status !== "Available"}
+                  onClick={handleAddToCart}  // ← Attach handler here
                 >
                   Add to Cart
                 </Button>

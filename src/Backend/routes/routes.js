@@ -12,9 +12,12 @@ import {
     login,
     logout,
     authenticate,
+    signup,
     addToCart,
     getCartItems,
-    removeCartItem
+    removeCartItem,
+    requestPasswordReset,
+    resetPassword
 } from '../api-endpoints/index.js'; // Import necessary endpoints
 
 import { uploadMultiple } from '../file-uploads/multerConfig.js';
@@ -43,7 +46,9 @@ router.delete('/banner/delete/:id', deleteBanner);
 router.post('/account/login', login);
 router.post('/account/logout', logout);
 router.post('/account/authenticate', authenticate);
-
+router.post('/account/signup', signup);
+router.post('/account/requestPasswordReset', requestPasswordReset);
+router.post('/account/resetPassword', resetPassword);
 
 
 // Cart-related routes

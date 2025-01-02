@@ -91,10 +91,10 @@ function About () {
             <Box sx={{ marginTop: '40px' }}>
                 <Typography variant="h6">Follow Us</Typography>
                 <Typography variant="body1">
-                <Link href="https://www.facebook.com" target="_blank" rel="noopener" sx={{ marginRight: '15px' }}>
+                <Link href="https://www.facebook.com/faction.my" target="_blank" rel="noopener" sx={{ marginRight: '15px' }}>
                     Facebook
                 </Link>
-                <Link href="https://www.instagram.com" target="_blank" rel="noopener">
+                <Link href="https://www.instagram.com/faction.my/" target="_blank" rel="noopener">
                     Instagram
                 </Link>
                 </Typography>

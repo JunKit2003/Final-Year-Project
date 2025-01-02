@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Box, Button, TextField, Typography, Card, CardContent } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "../AxiosSingleton";
 import Header from "../components/Header"; // Import Header component
 
@@ -89,6 +89,13 @@ function Login() {
                 Login
               </Button>
             </form>
+            {/* Create Account Link */}
+            <Typography variant="body2" align="center" sx={{ marginTop: 2 }}>
+              Don't have an account?{" "}
+              <Link to="/signup" style={{ textDecoration: "none", color: "#1976D2", fontWeight: "bold" }}>
+                Create Account
+              </Link>
+            </Typography>
           </CardContent>
         </Card>
       </Box>

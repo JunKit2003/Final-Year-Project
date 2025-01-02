@@ -71,6 +71,7 @@ const AddEditProductForm = ({
     setVariations([
       ...variations,
       {
+        name:"",
         sku: "",
         price: "",
         stock: "",
@@ -209,6 +210,15 @@ const AddEditProductForm = ({
               >
                 <RemoveCircleOutline />
               </IconButton>
+              <TextField
+                  label="Name"
+                  value={variation.name}
+                  onChange={(e) =>
+                    handleVariationChange(index, "name", e.target.value)
+                  }
+                  fullWidth
+                  margin="normal"
+                />
               <TextField
                 label="SKU"
                 value={variation.sku}

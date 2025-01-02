@@ -89,7 +89,7 @@ const ImageUploadUI = ({
 								onChange={() => handleVariationToggle(variation.sku)}
 							/>
 						}
-						label={`Upload Images for ${variation.sku}`}
+						label={`Upload Images for ${variation.name} (sku: ${variation.sku})`}
 					/>
 
 					{selectedVariations.includes(variation.sku) && (

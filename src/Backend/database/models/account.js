@@ -75,6 +75,17 @@ export default (sequelize, DataTypes) => {
         notEmpty: { msg: "Email must not be empty!" },
       },
     },
+    phone_number: {
+      type: DataTypes.STRING(15),
+      allowNull: true, // Optional, set `false` if mandatory
+      validate: {
+        isValidPhoneNumber(value) {
+          if (value && !/^\+?\d{10,15}$/.test(value)) {
+            throw new Error("Phone number must be valid (10-15 digits, optional + prefix).");
+          }
+        },
+      },
+    },
     password: {
       type: DataTypes.TEXT('long'),
       allowNull: false,

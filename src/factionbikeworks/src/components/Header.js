@@ -1,31 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Drawer, List, ListItemText, ListItemButton, Dialog, DialogTitle, DialogActions, Button } from '@mui/material';
+import {
+  Box,
+  Drawer,
+  List,
+  ListItemText,
+  ListItemButton,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  Button,
+} from '@mui/material';
 import useGlobalNavigation from '../routes/Navigation';
-import axios from "axios";
+import axios from 'axios';
 
 const drawerHeight = 80;
 
 const Header = () => {
-  const { goToAdminPage, goToAboutPage, goToHomePage, goToCatalogPage, goToLoginPage } = useGlobalNavigation();
+  const {
+    goToAdminPage,
+    goToAboutPage,
+    goToHomePage,
+    goToCatalogPage,
+    goToLoginPage,
+    goToCartPage,  // <--- Make sure this is imported from useGlobalNavigation
+  } = useGlobalNavigation();
   
   // State to manage login status, user name, and user category
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
-  const [userCategory, setUserCategory] = useState(''); // State for user category
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false); // Dialog state for logout confirmation
+  const [userCategory, setUserCategory] = useState('');
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
+  // Check authentication status
   const checkAuthStatus = async () => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/account/authenticate`, null, {
-        withCredentials: true, // Ensure that cookies are sent
-      });
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_HOST}/api/account/authenticate`,
+        null,
+        {
+          withCredentials: true,
+        }
+      );
       if (response.status === 200 && response.data.user) {
         setIsLoggedIn(true);
         setUserName(response.data.user.username);
-        setUserCategory(response.data.user.category); // Set the user category
+        setUserCategory(response.data.user.category);
       }
     } catch (error) {
-      console.error("Failed to fetch authentication status", error);
+      console.error('Failed to fetch authentication status', error);
     }
   };
 
@@ -33,15 +55,20 @@ const Header = () => {
     checkAuthStatus();
   }, []);
 
+  // Handle logout
   const handleLogout = async () => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/account/logout`, null, {
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_HOST}/api/account/logout`,
+        null,
+        {
+          withCredentials: true,
+        }
+      );
       if (response.status === 200) {
         setIsLoggedIn(false);
-        setUserName(''); // Clear the username on logout
-        setUserCategory(''); // Clear the user category on logout
+        setUserName('');
+        setUserCategory('');
         goToHomePage();
       } else {
         console.error('Logout failed');
@@ -49,16 +76,16 @@ const Header = () => {
     } catch (error) {
       console.error('Error logging out:', error);
     } finally {
-      setLogoutDialogOpen(false); // Close the logout confirmation dialog
+      setLogoutDialogOpen(false);
     }
   };
 
   const handleLogoutClick = () => {
-    setLogoutDialogOpen(true); // Open logout confirmation dialog
+    setLogoutDialogOpen(true);
   };
 
   const handleDialogClose = () => {
-    setLogoutDialogOpen(false); // Close dialog without logging out
+    setLogoutDialogOpen(false);
   };
 
   return (
@@ -101,7 +128,7 @@ const Header = () => {
           <ListItemText primary="About" />
         </ListItemButton>
 
-        {/* Conditional rendering for Admin button */}
+        {/* Show Admin button only for admin users */}
         {isLoggedIn && userCategory === 'admin' && (
           <ListItemButton onClick={goToAdminPage}>
             <ListItemText primary="Admin" />
@@ -112,10 +139,17 @@ const Header = () => {
           <ListItemText primary="Catalog" />
         </ListItemButton>
 
-        {/* Conditional rendering for Login/Logout button */}
+        {/* ADD THE CART BUTTON HERE */}
+        {isLoggedIn && (
+          <ListItemButton onClick={goToCartPage}>
+            <ListItemText primary="Cart" />
+          </ListItemButton>
+        )}
+
+        {/* Login / Username (Logout) Button */}
         {isLoggedIn ? (
           <ListItemButton onClick={handleLogoutClick}>
-            <ListItemText primary={userName} /> {/* Display username */}
+            <ListItemText primary={userName} />
           </ListItemButton>
         ) : (
           <ListItemButton onClick={goToLoginPage}>
