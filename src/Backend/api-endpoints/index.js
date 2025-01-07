@@ -23,6 +23,7 @@ export { default as authenticate } from './accounts/authenticate.js';
 export { default as signup } from './accounts/signup.js';
 export { default as requestPasswordReset } from './accounts/requestPasswordReset.js';
 export { default as resetPassword } from './accounts/resetPassword.js';
+export { default as testEmail } from './accounts/testEmail.js';
 
 // Cart related exports
 export { default as addToCart } from './cart/addToCart.js';

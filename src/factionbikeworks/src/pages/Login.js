@@ -28,7 +28,6 @@ function Login() {
       if (response.data.user) {
         setSuccessMessage("Login successful!");
         setErrorMessage("");
-
         setTimeout(() => {
           navigate("/");
         }, 2000);
@@ -48,7 +47,7 @@ function Login() {
 
   return (
     <div>
-      <Header /> {/* Add Header component */}
+      <Header />
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
         <Card sx={{ width: 400, padding: 4 }}>
           <CardContent>
@@ -89,6 +88,14 @@ function Login() {
                 Login
               </Button>
             </form>
+
+            {/* Forgot Password Link */}
+            <Typography variant="body2" align="center" sx={{ marginTop: 2 }}>
+              <Link to="/passwordReset" style={{ textDecoration: "none", color: "#1976D2", fontWeight: "bold" }}>
+                Forgot your password?
+              </Link>
+            </Typography>
+
             {/* Create Account Link */}
             <Typography variant="body2" align="center" sx={{ marginTop: 2 }}>
               Don't have an account?{" "}

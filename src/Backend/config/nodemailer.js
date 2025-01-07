@@ -1,11 +1,21 @@
-// config/nodemailer.js
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
 
-// Create a named exporter "transporter"
+dotenv.config();
+
+// Debugging: Ensure variables are loaded correctly
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASSWORD:", process.env.EMAIL_PASSWORD ? "Loaded" : "Not Loaded");
+console.log("EMAIL_HOST:", process.env.EMAIL_HOST);
+console.log("EMAIL_PORT:", process.env.EMAIL_PORT);
+console.log("EMAIL_SECURE:", process.env.EMAIL_SECURE);
+
 export const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.EMAIL_HOST,
+  port: parseInt(process.env.EMAIL_PORT, 10),
+  secure: process.env.EMAIL_SECURE === 'true', // STARTTLS (`false` for port 2525)
   auth: {
-    user: process.env.EMAIL_USER,     // e.g., "yourgmail@gmail.com"
-    pass: process.env.EMAIL_PASSWORD, // e.g., "yourGmailPassword"
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
   },
 });

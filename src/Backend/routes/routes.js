@@ -17,7 +17,8 @@ import {
     getCartItems,
     removeCartItem,
     requestPasswordReset,
-    resetPassword
+    resetPassword,
+    testEmail
 } from '../api-endpoints/index.js'; // Import necessary endpoints
 
 import { uploadMultiple } from '../file-uploads/multerConfig.js';
@@ -49,6 +50,8 @@ router.post('/account/authenticate', authenticate);
 router.post('/account/signup', signup);
 router.post('/account/requestPasswordReset', requestPasswordReset);
 router.post('/account/resetPassword', resetPassword);
+router.post('/account/testEmail', testEmail);
+
 
 
 // Cart-related routes

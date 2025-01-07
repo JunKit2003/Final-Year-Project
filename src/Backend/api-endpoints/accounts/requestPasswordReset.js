@@ -7,19 +7,22 @@ import { InputValidationError } from '../../database/utils.js';
 
 /**
  * POST /api/account/request-password-reset
- * Body: { email, recaptchaToken }
+ * Body: { email }
+ *
+ * 1. Check if user exists
+ * 2. Generate reset token + expiration
+ * 3. Store them in DB
+ * 4. Send the token via email
  */
 export default async function requestPasswordReset(req, res) {
   try {
-    const { email, recaptchaToken } = req.body;
+    const { email } = req.body;
 
     if (!email) {
       throw new InputValidationError("Email is required for password reset.");
     }
 
-    // (Optional) reCAPTCHA validation
-
-    // 1. Check if user exists
+    // 1. Find user by email
     const user = await db.Account.findOne({ where: { email } });
     if (!user) {
       // Generic response for security: always return success
@@ -29,16 +32,16 @@ export default async function requestPasswordReset(req, res) {
       });
     }
 
-    // 2. Generate token & expiration
+    // 2. Generate token & expiration (15-minute validity)
     const resetToken = crypto.randomBytes(20).toString('hex');
-    const expiration = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+    const expiration = new Date(Date.now() + 1000 * 60 * 15);
 
-    // 3. Store them
+    // 3. Store them in the database
     user.password_reset_token = resetToken;
     user.password_reset_token_expiration = expiration;
     await user.save();
 
-    // 4. Send email
+    // 4. Send email using nodemailer
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email,

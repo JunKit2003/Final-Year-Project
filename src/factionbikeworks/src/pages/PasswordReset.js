@@ -77,7 +77,7 @@ function PasswordReset() {
     try {
       // Call your backend endpoint
       const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_HOST}/api/account/request-password-reset`,
+        `${process.env.REACT_APP_BACKEND_HOST}/api/account/requestPasswordReset`,
         {
           email,
           recaptchaToken, // pass the token from reCAPTCHA
@@ -127,7 +127,7 @@ function PasswordReset() {
     try {
       // Call your backend endpoint
       const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_HOST}/api/account/reset-password`,
+        `${process.env.REACT_APP_BACKEND_HOST}/api/account/resetPassword`,
         {
           email,
           code,
