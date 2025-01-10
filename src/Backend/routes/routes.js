@@ -18,7 +18,9 @@ import {
     removeCartItem,
     requestPasswordReset,
     resetPassword,
-    testEmail
+    testEmail,
+    createOrder,
+    markOrderPaidAndClearCart,
 } from '../api-endpoints/index.js'; // Import necessary endpoints
 
 import { uploadMultiple } from '../file-uploads/multerConfig.js';
@@ -55,11 +57,10 @@ router.post('/account/testEmail', testEmail);
 
 
 // Cart-related routes
-// Account-related routes
 router.post('/cart/add', addToCart);             // Add an item to the cart
 router.get('/cart/:user_id', getCartItems);      // Get all cart items for a user
 router.delete('/cart/:cart_item_id', removeCartItem); // Remove a specific cart item
-
-
+router.post('/cart/createOrder', createOrder);          
+router.patch('/cart/markOrderPaidAndClearCart', markOrderPaidAndClearCart);  
 
 export default router;

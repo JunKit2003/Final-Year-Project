@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Header from "../components/Header"; // Import the Header component
+import { useNavigate } from "react-router-dom";
+import Header from "../components/Header";
 import {
   Box,
   Paper,
@@ -9,29 +10,31 @@ import {
   Card,
   CardContent,
   Grid,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
 
-  // Get userId (normally from auth context or localStorage)
+  const navigate = useNavigate();
   const userId = localStorage.getItem("userId") || 1;
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Fetch cart items on component mount
-  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
+    // Reset selected items in localStorage
+    localStorage.removeItem("selectedItems");
+
+    // Fetch cart items
     fetchCartItems();
-    // eslint-disable-next-line
   }, []);
 
   const fetchCartItems = async () => {
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${userId}`,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       setCartItems(response.data);
     } catch (error) {
@@ -39,18 +42,38 @@ const Cart = () => {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Handle removing an item from cart
-  // ─────────────────────────────────────────────────────────────────────────────
+  const handleSelectItem = (itemId) => {
+    setSelectedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(cartItems.map((item) => item.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) {
+      alert("Please select items to checkout.");
+      return;
+    }
+    localStorage.setItem("selectedItems", JSON.stringify(selectedItems));
+    navigate("/checkoutPage");
+  };
+
   const handleRemove = async (cartItemId) => {
     try {
       await axios.delete(
         `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${cartItemId}`,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
-      // Update state to reflect the removal
       setCartItems((prevItems) =>
         prevItems.filter((item) => item.id !== cartItemId)
       );
@@ -59,9 +82,6 @@ const Cart = () => {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // If no items in the cart
-  // ─────────────────────────────────────────────────────────────────────────────
   if (!cartItems || cartItems.length === 0) {
     return (
       <>
@@ -73,20 +93,26 @@ const Cart = () => {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Render Cart Items
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div>
-      <Header /> {/* Header imported from Home Page */}
+      <Header />
       <Box sx={{ p: 4 }}>
         <Typography variant="h4" gutterBottom>
           My Cart
         </Typography>
 
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={selectAll}
+              onChange={handleSelectAll}
+            />
+          }
+          label="Select All"
+        />
+
         <Grid container spacing={3}>
           {cartItems.map((item) => {
-            // If you included Variation + Product data in your response:
             const variation = item.variation || {};
             const product = variation.product || {};
 
@@ -95,6 +121,15 @@ const Cart = () => {
                 <Paper elevation={3}>
                   <Card>
                     <CardContent>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={selectedItems.includes(item.id)}
+                            onChange={() => handleSelectItem(item.id)}
+                          />
+                        }
+                        label="Select"
+                      />
                       <Typography variant="h6">
                         {product.name || "Unnamed Product"}
                       </Typography>
@@ -123,6 +158,17 @@ const Cart = () => {
             );
           })}
         </Grid>
+
+        <Box textAlign="center" mt={4}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleCheckout}
+            disabled={selectedItems.length === 0}
+          >
+            Proceed to Checkout
+          </Button>
+        </Box>
       </Box>
     </div>
   );

@@ -1,17 +1,18 @@
 export default async function authenticate(req, res) {
     try {
-        
-        // console.log("In Authenticate");
-        // console.log(req.session);
+        console.log("Session Data:", req.session); // Debug session data
 
         if (!req.session.user) {
             return res.status(401).send({ message: 'User not logged in' }); // 401 Unauthorized
         }
 
         const { category } = req.session.user;
+
+        console.log("User Category:", category); // Debug category
+
         const roles = {
-            admin: 'Admin user logged in',
-            customer: 'Customer user logged in',
+            Admin: 'Admin user logged in',
+            Customer: 'Customer user logged in',
         };
 
         if (roles[category]) {

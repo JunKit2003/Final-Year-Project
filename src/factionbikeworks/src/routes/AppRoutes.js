@@ -13,6 +13,9 @@ const Signup = lazy(() => import('../pages/Signup.js'));
 const ViewProduct = lazy(() => import('../pages/ViewProduct.js'));
 const Cart = lazy(() => import('../pages/Cart.js'));
 const PasswordReset = lazy(() => import('../pages/PasswordReset.js'));
+const CheckoutPage = lazy(() => import('../pages/CheckoutPage.js'));
+const PaymentSuccess = lazy(() => import('../pages/PaymentSuccess.js'));
+const PaymentFailed = lazy(() => import('../pages/PaymentFailed.js'));
 
 const AppRoutes = () => {
   return (
@@ -27,6 +30,9 @@ const AppRoutes = () => {
         <Route path="/cart" element={<Cart />} />
         <Route path="/PasswordReset" element={<PasswordReset />} />
         <Route path="/viewProduct/:productId" element={<ViewProduct />} />
+        <Route path="/checkoutPage" element={<CheckoutPage />} />
+        <Route path="/paymentSuccess" element={<PaymentSuccess />} />
+        <Route path="/paymentFailed" element={<PaymentFailed />} />
         
       </Routes>
     </Suspense>

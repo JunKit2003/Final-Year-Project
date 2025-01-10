@@ -547,6 +547,10 @@ const addCartItemToDB = withDatabaseConnectivity(
 	  throw error;
 	}
   });
+  
+  
+
+  
 
 // Export all errors and database utility functions as required
 export {
