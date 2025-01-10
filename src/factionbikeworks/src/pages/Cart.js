@@ -15,33 +15,51 @@ import {
 } from "@mui/material";
 
 const Cart = () => {
+  const [sessionUser, setSessionUser] = useState(null);  // ← Store authenticated user
   const [cartItems, setCartItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
 
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId") || 1;
 
+  // 1) Fetch the user from /api/account/authenticate (POST)
   useEffect(() => {
-    // Reset selected items in localStorage
-    localStorage.removeItem("selectedItems");
+    const authenticateUser = async () => {
+      try {
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/account/authenticate`,
+          {},
+          { withCredentials: true }
+        );
+        setSessionUser(response.data.user);
+      } catch (error) {
+        console.error("Error authenticating user:", error);
+      }
+    };
 
-    // Fetch cart items
-    fetchCartItems();
+    authenticateUser();
   }, []);
 
-  const fetchCartItems = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${userId}`,
-        { withCredentials: true }
-      );
-      setCartItems(response.data);
-    } catch (error) {
-      console.error("Error fetching cart items:", error);
-    }
-  };
+  // 2) Once we have the user, fetch their cart
+  useEffect(() => {
+    if (!sessionUser || !sessionUser.id) return;
 
+    const fetchCartItems = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${sessionUser.id}`,
+          { withCredentials: true }
+        );
+        setCartItems(response.data);
+      } catch (error) {
+        console.error("Error fetching cart items:", error);
+      }
+    };
+
+    fetchCartItems();
+  }, [sessionUser]);
+
+  // Handle selecting/deselecting an individual item
   const handleSelectItem = (itemId) => {
     setSelectedItems((prev) =>
       prev.includes(itemId)
@@ -50,6 +68,7 @@ const Cart = () => {
     );
   };
 
+  // Handle "Select All" toggle
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedItems([]);
@@ -59,15 +78,7 @@ const Cart = () => {
     setSelectAll(!selectAll);
   };
 
-  const handleCheckout = () => {
-    if (selectedItems.length === 0) {
-      alert("Please select items to checkout.");
-      return;
-    }
-    localStorage.setItem("selectedItems", JSON.stringify(selectedItems));
-    navigate("/checkoutPage");
-  };
-
+  // Remove an item from the cart
   const handleRemove = async (cartItemId) => {
     try {
       await axios.delete(
@@ -82,6 +93,37 @@ const Cart = () => {
     }
   };
 
+  // Proceed to checkout without using localStorage
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) {
+      alert("Please select items to checkout.");
+      return;
+    }
+
+    // Option 1: Pass selectedItems in a URL param
+    // navigate(`/checkoutPage?selectedItems=${encodeURIComponent(JSON.stringify(selectedItems))}`);
+
+    // Option 2: Use a global state management (Redux/Context) to store selectedItems
+
+    // For now, we'll use a simple param approach:
+    navigate(
+      `/checkoutPage?selected=${encodeURIComponent(JSON.stringify(selectedItems))}`
+    );
+  };
+
+  // If user not yet authenticated or cart not fetched, optionally show a loading message
+  if (!sessionUser) {
+    return (
+      <>
+        <Header />
+        <Box textAlign="center" mt={4}>
+          <Typography variant="h5">Authenticating user...</Typography>
+        </Box>
+      </>
+    );
+  }
+
+  // If the cart is empty, show a message
   if (!cartItems || cartItems.length === 0) {
     return (
       <>

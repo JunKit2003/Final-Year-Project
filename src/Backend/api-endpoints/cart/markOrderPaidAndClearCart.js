@@ -1,3 +1,4 @@
+//cart/markOrderPaidAndClearCart.js
 import Stripe from "stripe";
 import {
   pingDatabase,
@@ -65,7 +66,7 @@ export default async function markOrderPaidAndClearCart(req, res) {
     await db.Cart.destroy({
       where: {
         accountId: user_id,
-        variationId: selectedVariationIds, // Match selected items
+        variationId: selectedVariationIds, // ← ONLY remove the purchased items
       },
       transaction,
     });
@@ -74,9 +75,9 @@ export default async function markOrderPaidAndClearCart(req, res) {
     await transaction.commit();
 
     // 10) Return success response
-    return res
-      .status(200)
-      .json({ message: "Order marked as Paid and selected cart items cleared successfully." });
+    return res.status(200).json({
+      message: "Order marked as Paid and selected cart items cleared successfully.",
+    });
   } catch (error) {
     // Roll back any changes on error
     await transaction.rollback();

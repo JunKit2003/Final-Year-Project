@@ -9,37 +9,53 @@ import {
 } from "@mui/material";
 
 const PaymentSuccess = () => {
+  const [sessionUser, setSessionUser] = useState(null);
   const [message, setMessage] = useState("Verifying your payment...");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // 1) Extract Stripe session ID from the URL
+    // 1) Authenticate user to get sessionUser
+    const authenticateUser = async () => {
+      try {
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/account/authenticate`,
+          {},
+          { withCredentials: true }
+        );
+        setSessionUser(response.data.user);
+      } catch (err) {
+        console.error("Error authenticating user:", err);
+      }
+    };
+    authenticateUser();
+  }, []);
+
+  useEffect(() => {
+    // Only proceed once we have the sessionUser
+    if (!sessionUser || !sessionUser.id) return;
+
+    // 2) Extract Stripe session ID from the URL
     const sessionId = new URLSearchParams(window.location.search).get("session_id");
 
-    // 2) Retrieve userId from localStorage (fallback to 1)
-    const userId = localStorage.getItem("userId") || 1;
-
     if (!sessionId) {
-      // If no session ID is found, show error and stop
-      setMessage("No session ID was found in the URL. Could not verify payment.");
+      setMessage("No session ID found in the URL. Could not verify payment.");
       setLoading(false);
       return;
     }
 
-    // 3) Define a function to finalize the payment
+    // 3) Call the backend to finalize payment
     const finalizePayment = async () => {
       try {
-        // Call the backend API to mark the order as "Paid" and clear the cart
-        const response = await axios.patch(
+        await axios.patch(
           `${process.env.REACT_APP_BACKEND_HOST}/api/cart/markOrderPaidAndClearCart`,
           {
             session_id: sessionId,
-            user_id: userId,
-          }
+            user_id: sessionUser.id, // ← Use sessionUser.id
+          },
+          { withCredentials: true }
         );
 
-        // Set success message
         setMessage(
           "Payment successful! Your order has been marked as Paid and items removed from the cart."
         );
@@ -52,9 +68,8 @@ const PaymentSuccess = () => {
       }
     };
 
-    // 4) Call finalizePayment
     finalizePayment();
-  }, []);
+  }, [sessionUser]);
 
   return (
     <Box sx={{ p: 4 }}>

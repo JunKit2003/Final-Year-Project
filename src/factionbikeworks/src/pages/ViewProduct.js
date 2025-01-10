@@ -21,9 +21,40 @@ import "slick-carousel/slick/slick-theme.css";
 
 const ViewProduct = () => {
   const { productId } = useParams();
+
+  // Store product details
   const [product, setProduct] = useState(null);
+
+  // Track which variation is selected from dropdown
   const [selectedVariationIndex, setSelectedVariationIndex] = useState(0);
 
+  // Store user data from /api/account/authenticate
+  const [sessionUser, setSessionUser] = useState(null);
+
+  // 1) Fetch user session data (POST request for authenticate API)
+  useEffect(() => {
+    const fetchSessionUser = async () => {
+      try {
+        // Because your authenticate endpoint is POST-based, we send a POST request here.
+        // We pass an empty object (or any required data) as the second argument,
+        // and include { withCredentials: true } to allow cookies/sessions.
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/account/authenticate`,
+          {},
+          { withCredentials: true }
+        );
+
+        console.log("Authenticated User:", response.data.user);
+        setSessionUser(response.data.user);
+      } catch (err) {
+        console.error("Error fetching session user:", err);
+      }
+    };
+
+    fetchSessionUser();
+  }, []);
+
+  // 2) Fetch product details (POST request)
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -39,7 +70,7 @@ const ViewProduct = () => {
         );
 
         if (response.data.product) {
-          console.log(response.data.product);
+          console.log("Fetched Product:", response.data.product);
           setProduct(response.data.product);
         }
       } catch (error) {
@@ -50,35 +81,40 @@ const ViewProduct = () => {
     fetchProduct();
   }, [productId]);
 
+  // Show loading text if product is not yet fetched
   if (!product) {
     return <Typography variant="h6">Loading product details...</Typography>;
   }
 
+  // Variations for the product
   const variations = product.variations || [];
   const selectedVariation = variations[selectedVariationIndex] || {};
 
-  // Correctly access images using the SKU as the key
+  // Variation images
   const variationImages = selectedVariation.images?.files || [];
   const defaultImageUrl = "https://via.placeholder.com/300";
 
+  // Handle variation selector
   const handleVariationChange = (event) => {
     setSelectedVariationIndex(event.target.value);
   };
 
-  // ─────────────────────────────────────────────────────────────────
-  //  ADD TO CART HANDLER
-  // ─────────────────────────────────────────────────────────────────
+  // 3) Add item to cart using the session user ID
   const handleAddToCart = async () => {
     try {
-      // In a real application, you'll pull this from auth context or localStorage
-      const userId = localStorage.getItem("userId") || 1; 
+      // Ensure the user is authenticated and we have a user ID
+      if (!sessionUser || !sessionUser.id) {
+        alert("User is not authenticated. Please log in.");
+        return;
+      }
 
+      // POST to /api/cart/add with the user ID from session
       await axios.post(
         `${process.env.REACT_APP_BACKEND_HOST}/api/cart/add`,
         {
-          user_id: userId,
+          user_id: sessionUser.id,
           variation_id: selectedVariation.id,
-          quantity: 1, // or any quantity you'd like
+          quantity: 1, // Or any other quantity
         },
         {
           headers: {
@@ -89,13 +125,14 @@ const ViewProduct = () => {
       );
 
       console.log("Item added to cart successfully!");
-      // Optionally show a success message to the user or update cart state
+      // Optionally, display a success message or update cart UI
     } catch (error) {
       console.error("Error adding to cart:", error);
-      // Optionally show an error message to the user
+      // Optionally handle or display error to user
     }
   };
 
+  // React-Slick settings
   const settings = {
     dots: true,
     infinite: true,
@@ -119,6 +156,7 @@ const ViewProduct = () => {
       >
         <Paper elevation={3} sx={{ padding: 3, width: "80%", maxWidth: "800px" }}>
           <Grid container spacing={4}>
+            {/* Left Column: Variation Images */}
             <Grid item xs={12} md={6}>
               <Card>
                 {variationImages.length > 1 ? (
@@ -164,6 +202,8 @@ const ViewProduct = () => {
                 )}
               </Card>
             </Grid>
+
+            {/* Right Column: Variation Details */}
             <Grid item xs={12} md={6}>
               <CardContent>
                 <Typography variant="h4" gutterBottom>
@@ -179,7 +219,7 @@ const ViewProduct = () => {
                   Category: {product.category}
                 </Typography>
 
-                {/* Variations Selector */}
+                {/* Variation Selector */}
                 <FormControl fullWidth sx={{ mt: 2 }}>
                   <InputLabel id="variation-select-label">
                     Select Variation
@@ -198,7 +238,7 @@ const ViewProduct = () => {
                   </Select>
                 </FormControl>
 
-                {/* Variation Details */}
+                {/* Variation Info */}
                 <Typography variant="h5" color="primary" gutterBottom sx={{ mt: 2 }}>
                   Price: RM{selectedVariation.price}
                 </Typography>
@@ -217,7 +257,7 @@ const ViewProduct = () => {
                   color="primary"
                   sx={{ mt: 2 }}
                   disabled={selectedVariation.status !== "Available"}
-                  onClick={handleAddToCart}  // ← Attach handler here
+                  onClick={handleAddToCart}
                 >
                   Add to Cart
                 </Button>

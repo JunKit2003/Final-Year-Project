@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -13,54 +13,102 @@ import {
 } from "@mui/material";
 
 const CheckoutPage = () => {
+  const [sessionUser, setSessionUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [selectedItemIds, setSelectedItemIds] = useState([]);
   const [address, setAddress] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Retrieve userId from localStorage (fall back to 1 if not found)
-  const userId = localStorage.getItem("userId") || 1;
-
+  // 1) Fetch session user by POSTing to /api/account/authenticate
   useEffect(() => {
-    fetchSelectedCartItems();
+    const fetchSessionUser = async () => {
+      try {
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/account/authenticate`,
+          {},
+          { withCredentials: true }
+        );
+        setSessionUser(response.data.user);
+      } catch (err) {
+        console.error("Error authenticating user:", err);
+        // Optionally redirect to login if not authenticated
+      }
+    };
+    fetchSessionUser();
   }, []);
 
-  const fetchSelectedCartItems = async () => {
-    try {
-      const selectedItems =
-        JSON.parse(localStorage.getItem("selectedItems")) || [];
+  // 2) Parse selected item IDs from the URL query parameter: "?selected=[...]"
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const selectedStr = params.get("selected");
 
-      if (selectedItems.length === 0) {
-        console.warn("No selected items found. Redirecting to Cart...");
+    if (!selectedStr) {
+      console.warn("No selected items found. Redirecting to Cart...");
+      window.location.href = "/cart";
+      return;
+    }
+
+    try {
+      const parsedIds = JSON.parse(selectedStr);
+      if (!Array.isArray(parsedIds) || parsedIds.length === 0) {
+        console.warn("Empty or invalid selected items. Redirecting to Cart...");
         window.location.href = "/cart";
         return;
       }
-
-      const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${userId}`
-      );
-
-      const filteredItems = response.data.filter((item) =>
-        selectedItems.includes(item.id)
-      );
-
-      setCartItems(filteredItems);
-
-      const total = filteredItems.reduce(
-        (acc, item) => acc + item.variation.price * item.quantity,
-        0
-      );
-      setTotalAmount(total);
-    } catch (error) {
-      console.error("Error fetching cart items:", error);
-      setError("Failed to fetch cart items. Please try again.");
+      setSelectedItemIds(parsedIds);
+    } catch (err) {
+      console.error("Failed to parse selected item IDs:", err);
+      window.location.href = "/cart";
     }
-  };
+  }, []);
 
+  // 3) Once we have the sessionUser + selectedItemIds, fetch the cart and filter
+  useEffect(() => {
+    if (!sessionUser || !sessionUser.id) return;
+    if (selectedItemIds.length === 0) return; // or wait for them to load
+
+    const fetchSelectedCartItems = async () => {
+      try {
+        // Fetch user's full cart
+        const response = await axios.get(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${sessionUser.id}`,
+          { withCredentials: true }
+        );
+
+        // Filter only the selected items
+        const fullCart = response.data;
+        const filteredItems = fullCart.filter((item) =>
+          selectedItemIds.includes(item.id)
+        );
+
+        // Update state
+        setCartItems(filteredItems);
+
+        // Calculate total
+        const total = filteredItems.reduce(
+          (acc, item) => acc + item.variation.price * item.quantity,
+          0
+        );
+        setTotalAmount(total);
+      } catch (error) {
+        console.error("Error fetching cart items:", error);
+        setError("Failed to fetch cart items. Please try again.");
+      }
+    };
+
+    fetchSelectedCartItems();
+  }, [sessionUser, selectedItemIds]);
+
+  // 4) Handle placing the order
   const handlePlaceOrder = async () => {
     if (!address) {
       alert("Please enter a shipping address.");
+      return;
+    }
+    if (!sessionUser || !sessionUser.id) {
+      alert("User is not authenticated. Please log in.");
       return;
     }
 
@@ -68,9 +116,8 @@ const CheckoutPage = () => {
       setLoading(true);
       setError("");
 
-      // Prepare payload for backend
       const payload = {
-        user_id: userId,
+        user_id: sessionUser.id,
         items: cartItems.map((item) => ({
           variation_id: item.variation.id,
           quantity: item.quantity,
@@ -79,29 +126,25 @@ const CheckoutPage = () => {
         total_amount: totalAmount,
       };
 
-      // Call the backend to create an order
+      // Create an order
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_HOST}/api/cart/createOrder`,
-        payload
+        payload,
+        { withCredentials: true }
       );
 
-      // Use the environment variable (NOT a literal string)
+      // Initialize Stripe
       const apiKey = process.env.REACT_APP_STRIPE_PUBLIC_KEY;
-
-      // Log the Stripe API key to confirm it's not undefined
-      console.log("Stripe API Key:", apiKey);
-
       if (!apiKey || typeof apiKey !== "string") {
         throw new Error("Stripe API key is missing or invalid.");
       }
 
-      // Initialize Stripe
       const stripe = await loadStripe(apiKey);
       if (!stripe) {
         throw new Error("Stripe failed to initialize. Please try again.");
       }
 
-      // Redirect to Stripe Checkout using the returned sessionId
+      // Redirect to Stripe Checkout
       await stripe.redirectToCheckout({ sessionId: response.data.sessionId });
     } catch (error) {
       console.error("Error placing order:", error);
@@ -110,6 +153,24 @@ const CheckoutPage = () => {
       setLoading(false);
     }
   };
+
+  // If user is not authenticated or we haven't finished loading
+  if (!sessionUser) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Typography variant="h6">Authenticating user...</Typography>
+      </Box>
+    );
+  }
+
+  // If we have no cart items (meaning either empty or not loaded yet)
+  if (cartItems.length === 0) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Typography variant="h6">No selected items found in your cart.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 4 }}>
