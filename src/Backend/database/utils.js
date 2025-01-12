@@ -548,9 +548,55 @@ const addCartItemToDB = withDatabaseConnectivity(
 	}
   });
   
+  const getAllOrdersFromDB = withDatabaseConnectivity(async () => {
+	try {
+	  // db.Order might be named differently in your code
+	  // Adjust if your model is named `Orders` or something else
+	  const orders = await db.Order.findAll({
+		include: [
+		  {
+			model: db.OrderItem,
+			as: "items",
+			// If you need to include product data for each item, you can nest includes:
+			// include: [{ model: db.Variations, as: "variation" }]
+		  },
+		],
+		// Optionally order by newest first
+		order: [["createdAt", "DESC"]],
+	  });
   
-
+	  // Convert each order to a plain JS object
+	  return orders.map((o) => o.get({ plain: true }));
+	} catch (error) {
+	  // If needed, wrap the error in your custom DatabaseError or InputValidationError
+	  throw error;
+	}
+  });
   
+  const setOrderStatusInDB = withDatabaseConnectivity(async (orderId, status) => {
+	try {
+	  // Fetch the order by its ID
+	  const order = await db.Order.findByPk(orderId);
+	  if (!order) {
+		throw new InputValidationError(`Order with ID ${orderId} not found.`);
+	  }
+  
+	  // Optionally: check that current status is something like "Paid" before fulfilling
+	  // if (order.status !== "Paid") {
+	  //   throw new InputValidationError(
+	  //     `Order must be "Paid" before fulfilling. Current status: ${order.status}`
+	  //   );
+	  // }
+  
+	  // Update the status
+	  await order.update({ status });
+  
+	  // No return is required, but you may choose to return the updated order
+	  // return order.get({ plain: true });
+	} catch (error) {
+	  throw error;
+	}
+  });
 
 // Export all errors and database utility functions as required
 export {
@@ -580,6 +626,8 @@ export {
 	addCartItemToDB,
 	getCartItemsFromDB,
 	removeCartItemFromDB,
+	setOrderStatusInDB,
+	getAllOrdersFromDB,
 
     // Exporting error classes
     DatabaseError,

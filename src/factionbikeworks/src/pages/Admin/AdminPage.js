@@ -6,6 +6,7 @@ import useGlobalNavigation from '../../routes/Navigation'; // Import the useGlob
 import Dashboard from './Dashboard';
 import ManageProducts from './ManageProducts';
 import ManageBanners from './ManageBanners.js';
+import ManageOrders from './ManageOrders.js';
 import axios from 'axios'; // Import axios
 
 const AdminPage = () => {
@@ -33,7 +34,7 @@ const AdminPage = () => {
         const data = response.data;
 
         // Check the user's category
-        if (data.user && data.user.category === 'admin') {
+        if (data.user && data.user.category === 'Admin') {
           setIsAuthorized(true); // User is an admin, allow access
         } else {
           setIsAuthorized(false); // User is not an admin, deny access
@@ -64,6 +65,7 @@ const AdminPage = () => {
         {selectedSection === 'Dashboard' && <Dashboard />}
         {selectedSection === 'Manage Products' && <ManageProducts />}
         {selectedSection === 'Manage Banners' && <ManageBanners />}
+        {selectedSection === 'Manage Orders' && <ManageOrders />}
       </Box>
     </Box>
   );

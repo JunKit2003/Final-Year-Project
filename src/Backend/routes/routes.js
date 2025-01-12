@@ -21,6 +21,8 @@ import {
     testEmail,
     createOrder,
     markOrderPaidAndClearCart,
+    getOrders,
+    fulfillOrders,
 } from '../api-endpoints/index.js'; // Import necessary endpoints
 
 import { uploadMultiple } from '../file-uploads/multerConfig.js';
@@ -62,5 +64,7 @@ router.get('/cart/:user_id', getCartItems);      // Get all cart items for a use
 router.delete('/cart/:cart_item_id', removeCartItem); // Remove a specific cart item
 router.post('/cart/createOrder', createOrder);          
 router.patch('/cart/markOrderPaidAndClearCart', markOrderPaidAndClearCart);  
+router.post('/cart/getOrders', getOrders);
+router.patch('/cart/fulfillOrders/:orderId/fulfill', fulfillOrders);
 
 export default router;

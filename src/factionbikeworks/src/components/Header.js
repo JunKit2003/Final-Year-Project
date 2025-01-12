@@ -129,7 +129,7 @@ const Header = () => {
         </ListItemButton>
 
         {/* Show Admin button only for admin users */}
-        {isLoggedIn && userCategory === 'admin' && (
+        {isLoggedIn && userCategory === 'Admin' && (
           <ListItemButton onClick={goToAdminPage}>
             <ListItemText primary="Admin" />
           </ListItemButton>

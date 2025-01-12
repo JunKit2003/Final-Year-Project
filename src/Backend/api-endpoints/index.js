@@ -31,3 +31,5 @@ export { default as getCartItems } from './cart/getCartItems.js';
 export { default as removeCartItem } from './cart/removeCartItems.js';
 export { default as createOrder } from './cart/createOrder.js';
 export { default as markOrderPaidAndClearCart } from './cart/markOrderPaidAndClearCart.js';
+export { default as getOrders } from './cart/getOrders.js';
+export { default as fulfillOrders } from './cart/fulfillOrders.js';

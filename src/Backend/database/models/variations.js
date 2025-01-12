@@ -13,10 +13,10 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: "products", // Name of the products table
+          model: "products",
           key: "id",
         },
-        onDelete: "CASCADE", // Ensures variations are removed if product is deleted
+        onDelete: "CASCADE",
       },
       name: {
         type: DataTypes.STRING,
@@ -62,7 +62,7 @@ export default (sequelize, DataTypes) => {
       status: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: "Available", // Can be "Available" or "Out of stock"
+        defaultValue: "Available",
         validate: {
           isIn: {
             args: [["Available", "Out of stock"]],
@@ -78,10 +78,19 @@ export default (sequelize, DataTypes) => {
     }
   );
 
+  // Hook to update status based on stock
+  Variations.addHook("beforeValidate", (variation) => {
+    if (variation.stock === 0) {
+      variation.status = "Out of stock";
+    } else if (variation.stock > 0) {
+      variation.status = "Available";
+    }
+  });
+
   Variations.associate = (models) => {
     Variations.belongsTo(models.Products, {
       foreignKey: "productId",
-      as: "product", // Alias for easier access
+      as: "product",
     });
   };
 

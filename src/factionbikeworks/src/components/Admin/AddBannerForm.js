@@ -7,40 +7,45 @@ const AddBannerForm = ({ handleSaveBanners, handleCloseForm, isSaving }) => {
   const [openImageUploadUI, setOpenImageUploadUI] = useState(false);
   const [imagesData, setImagesData] = useState({}); // State to manage uploaded images
 
+  // Open the image upload UI
   const handleOpenImageUploadUI = () => {
     setOpenImageUploadUI(true);
   };
 
+  // Close the image upload UI
   const handleCloseImageUploadUI = () => {
     setOpenImageUploadUI(false);
   };
 
-  const handleSaveImages = (colorImages) => {
-    // Update imagesData with the new images
+  // Save uploaded images
+  const handleSaveImages = (newImages) => {
+    // Update imagesData with new images
     setImagesData((prevData) => ({
       ...prevData,
-      ...colorImages,
+      ...newImages,
     }));
     handleCloseImageUploadUI(); // Close the image upload UI
   };
 
+  // Save banners by sending FormData
   const handleSave = () => {
-    const { files } = imagesData.banner; // Access the files array
+    // Retrieve files from the "banner" variation
+    const { files } = imagesData.banner || {}; // Handle case where "banner" might not exist
     const formData = new FormData();
-    
-    // Check if files are present and append them
+
     if (files && files.length > 0) {
-        for (let file of files) {
-            formData.append("files", file); // Append each file
-        }
+      // Append each file to FormData
+      for (let file of files) {
+        formData.append("files", file);
+      }
     } else {
-        console.error("No files to upload!");
-        return;
+      console.error("No files to upload!");
+      return;
     }
 
     console.log("FormData being sent:", formData);
-    handleSaveBanners(formData); // Pass the FormData directly
-};
+    handleSaveBanners(formData); // Pass FormData to parent handler
+  };
 
   return (
     <>
@@ -68,10 +73,10 @@ const AddBannerForm = ({ handleSaveBanners, handleCloseForm, isSaving }) => {
       {/* Image Upload UI */}
       <Dialog open={openImageUploadUI} onClose={handleCloseImageUploadUI} maxWidth="md" fullWidth>
         <ImageUploadUI
-          colors={["banner"]} // Pass a dummy 'colors' value like ["banner"] or an empty array []
-          existingImagesData={imagesData} // Pass image data from parent state
-          handleSave={handleSaveImages} // Handle saving images
-          handleClose={handleCloseImageUploadUI} // Handle closing without saving
+          variations={[{ sku: "banner", name: "Banner" }]} // Dummy "banner" variation
+          existingImagesData={imagesData} // Existing image data
+          handleSave={handleSaveImages} // Save handler
+          handleClose={handleCloseImageUploadUI} // Close handler
         />
       </Dialog>
     </>

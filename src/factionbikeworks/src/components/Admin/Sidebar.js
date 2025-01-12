@@ -82,6 +82,20 @@ const Sidebar = ({ setSelectedSection }) => {
           </ListItemIcon>
           <ListItemText primary="Manage Banners" />
         </ListItemButton>
+
+              {/* Manage Banners */}
+      <ListItemButton
+          selected={activeSection === 'Manage Orders'}
+          onClick={() => handleSectionClick('Manage Orders')}
+          sx={{
+            '&.Mui-selected': { backgroundColor: highlightColor }, // Highlight selected state
+          }}
+        >
+          <ListItemIcon>
+            <InventoryIcon />
+          </ListItemIcon>
+          <ListItemText primary="Manage Orders" />
+        </ListItemButton>
       </List>
     </Drawer>
   );
