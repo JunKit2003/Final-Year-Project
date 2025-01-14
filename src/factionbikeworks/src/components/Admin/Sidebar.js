@@ -83,7 +83,7 @@ const Sidebar = ({ setSelectedSection }) => {
           <ListItemText primary="Manage Banners" />
         </ListItemButton>
 
-              {/* Manage Banners */}
+      {/* Manage Orders */}
       <ListItemButton
           selected={activeSection === 'Manage Orders'}
           onClick={() => handleSectionClick('Manage Orders')}
@@ -96,6 +96,22 @@ const Sidebar = ({ setSelectedSection }) => {
           </ListItemIcon>
           <ListItemText primary="Manage Orders" />
         </ListItemButton>
+
+
+      {/* Manage Brand Images*/}
+      <ListItemButton
+          selected={activeSection === 'Manage Brand Images'}
+          onClick={() => handleSectionClick('Manage Brand Images')}
+          sx={{
+            '&.Mui-selected': { backgroundColor: highlightColor }, // Highlight selected state
+          }}
+        >
+          <ListItemIcon>
+            <InventoryIcon />
+          </ListItemIcon>
+          <ListItemText primary="Manage Brand Images" />
+        </ListItemButton>
+
       </List>
     </Drawer>
   );

@@ -86,9 +86,18 @@ const orderCount = await db.Order.count();
 // Check if cart table is empty
 const orderItemCount = await db.OrderItem.count();
 
+const brand_imagesCount = await db.BrandImages.count();
 
 // If any of the tables are empty, initialize the database
-if (accountCount === 0 || productCount === 0 || banner_imageCount === 0 || variationCount === 0 || cartCount === 0 || orderCount === 0 || orderItemCount === 0) {
+if (accountCount === 0 
+  // || productCount === 0 
+  // || banner_imageCount === 0 
+  // || variationCount === 0 
+  // || cartCount === 0 
+  // || orderCount === 0 
+  // || orderItemCount === 0
+  // || brand_imagesCount == 0
+) {
   console.log("Database not initialized properly, initializing now....");
   await initializeDatabase();
 }

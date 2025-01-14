@@ -1,5 +1,7 @@
 import { ValidationError } from "sequelize";
 import { snakeCaseToNormalCase } from "../../utils.js";
+import path from 'path';
+
 
 // Sequelize model for the products table
 export default (sequelize, DataTypes) => {
@@ -57,7 +59,37 @@ export default (sequelize, DataTypes) => {
     });
   };
 
-  // You can keep or modify any existing hooks or methods here
+  // Add a hook to synchronize the brand_images table after a product is created
+  Products.afterCreate(async (product, options) => {
+    const { brand } = product;
+    try {
+      // Check if the BrandImages model is available in sequelize.models
+      if (!sequelize.models.BrandImages) {
+        console.error("BrandImages model is not available in sequelize.models.");
+        return;
+      }
+  
+      // Check if the brand already exists in the brand_images table
+      const existingBrand = await sequelize.models.BrandImages.findOne({
+        where: { brandName: brand },
+      });
+  
+      // If it doesn't exist, add it
+      if (!existingBrand) {
+        await sequelize.models.BrandImages.create({
+          brandName: brand,
+          imagePath: "NoImage.jpg", // Default to an empty image path or placeholder
+          isVisible: true, // Default visibility
+        });
+        console.log(`Added brand: ${brand} to brand_images table.`);
+      } else {
+        console.log(`Brand: ${brand} already exists in brand_images table.`);
+      }
+    } catch (error) {
+      console.error("Error in Products.afterCreate hook:", error);
+    }
+  });
+  
 
   return Products;
 };

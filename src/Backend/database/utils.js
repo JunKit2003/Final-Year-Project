@@ -598,6 +598,24 @@ const addCartItemToDB = withDatabaseConnectivity(
 	}
   });
 
+
+  // Retrieve all brand images from the database
+const getBrandImagesFromDB = withDatabaseConnectivity(async () => {
+	try {
+	  const brands = await db.BrandImages.findAll();
+  
+	  if (!brands.length) {
+		throw new Error("No brand images found.");
+	  }
+  
+	  // Extract plain brand image data
+	  return brands.map((brand) => brand.get({ plain: true }));
+	} catch (error) {
+	  throw new DatabaseConnectionError("Failed to fetch brand images.");
+	}
+  });
+  
+
 // Export all errors and database utility functions as required
 export {
     // Exporting product utility functions
@@ -611,6 +629,7 @@ export {
 	deleteProductFromDB,
 	getProductsCategoryFromDB,
 	getProductBrandsFromDB,
+	getBrandImagesFromDB,
 
     // Exporting banner utility functions
     getBannersFromDB,

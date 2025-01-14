@@ -7,6 +7,7 @@ import Dashboard from './Dashboard';
 import ManageProducts from './ManageProducts';
 import ManageBanners from './ManageBanners.js';
 import ManageOrders from './ManageOrders.js';
+import ManageBrandImages from './ManageBrandImages.js';
 import axios from 'axios'; // Import axios
 
 const AdminPage = () => {
@@ -66,6 +67,7 @@ const AdminPage = () => {
         {selectedSection === 'Manage Products' && <ManageProducts />}
         {selectedSection === 'Manage Banners' && <ManageBanners />}
         {selectedSection === 'Manage Orders' && <ManageOrders />}
+        {selectedSection === 'Manage Brand Images' && <ManageBrandImages />}
       </Box>
     </Box>
   );
