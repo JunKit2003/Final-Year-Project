@@ -2,7 +2,13 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import LoadingButton from "../LoadingButton";
 
-const BrandImageView = ({ brandImages, handleDeleteBrandImage, isDeleting }) => {
+const BrandImageView = ({
+  brandImages,
+  handleDeleteBrandImage,
+  handleEditBrandImage,
+  isDeleting,
+  isEditing,
+}) => {
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
       {brandImages.map((brand) => {
@@ -53,15 +59,27 @@ const BrandImageView = ({ brandImages, handleDeleteBrandImage, isDeleting }) => 
               </Box>
             )}
 
-            <LoadingButton
-              variant="outlined"
-              color="error"
-              onClick={() => handleDeleteBrandImage(id)}
-              isLoading={isDeleting}
-              sx={{ mt: 2 }}
-            >
-              Delete
-            </LoadingButton>
+            <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+              {/* Edit Button */}
+              <LoadingButton
+                variant="outlined"
+                color="primary"
+                onClick={() => handleEditBrandImage(brand)}
+                isLoading={isEditing}
+              >
+                Edit
+              </LoadingButton>
+
+              {/* Delete Button */}
+              <LoadingButton
+                variant="outlined"
+                color="error"
+                onClick={() => handleDeleteBrandImage(id)}
+                isLoading={isDeleting}
+              >
+                Delete
+              </LoadingButton>
+            </Box>
           </Box>
         );
       })}

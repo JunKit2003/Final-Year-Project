@@ -7,6 +7,8 @@ export { default as deleteProduct } from './products/deleteProduct.js';
 export { default as getProductCategories } from './products/getProductCategories.js';
 export { default as getProductBrands } from './products/getProductBrands.js';
 export { default as getBrandImages } from './products/getBrandImages.js';
+export { default as updateBrandImage } from './products/updateBrandImage.js';
+
 
 
 

@@ -24,6 +24,7 @@ import {
     getOrders,
     fulfillOrders,
     getBrandImages,
+    updateBrandImage,
 } from '../api-endpoints/index.js'; // Import necessary endpoints
 
 import { uploadMultiple } from '../file-uploads/multerConfig.js';
@@ -40,6 +41,7 @@ router.delete('/product/delete/:id', deleteProduct);
 router.post('/product/getCategories', getProductCategories);
 router.post('/product/getBrands', getProductBrands);
 router.post('/product/getBrandImages', getBrandImages);
+router.patch('/product/updateBrandImage/:id', uploadMultiple, updateBrandImage)
 
 // Banner-related routes
 router.post('/banner/add', uploadMultiple, addBanner);

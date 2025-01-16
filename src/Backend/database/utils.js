@@ -616,6 +616,36 @@ const getBrandImagesFromDB = withDatabaseConnectivity(async () => {
   });
   
 
+  const updateBrandImageInDB = withDatabaseConnectivity(async (id, brandDetails) => {
+	try {
+	  // Find brand image entry by primary key
+	  const brand = await db.BrandImages.findByPk(id);
+  
+	  if (!brand) {
+		return null;
+	  }
+  
+	  // Update only the `imagePath` (and isVisible if you wish)
+	  await brand.update({
+		imagePath: brandDetails.imagePath || brand.imagePath,
+		isVisible:
+		  brandDetails.isVisible !== undefined
+			? brandDetails.isVisible
+			: brand.isVisible,
+	  });
+  
+	  return brand;
+	} catch (error) {
+	  if (error instanceof db.Sequelize.ValidationError) {
+		throw new InputValidationError(
+		  "Invalid input: " + error.errors.map((e) => e.message).join(", ")
+		);
+	  } else {
+		throw error;
+	  }
+	}
+  });
+  
 // Export all errors and database utility functions as required
 export {
     // Exporting product utility functions
@@ -630,6 +660,7 @@ export {
 	getProductsCategoryFromDB,
 	getProductBrandsFromDB,
 	getBrandImagesFromDB,
+	updateBrandImageInDB,
 
     // Exporting banner utility functions
     getBannersFromDB,
