@@ -616,13 +616,18 @@ const getBrandImagesFromDB = withDatabaseConnectivity(async () => {
   });
   
 
-  const updateBrandImageInDB = withDatabaseConnectivity(async (id, brandDetails) => {
+  const updateBrandImageInDB = withDatabaseConnectivity(async (id, brandDetails = null) => {
 	try {
 	  // Find brand image entry by primary key
 	  const brand = await db.BrandImages.findByPk(id);
   
 	  if (!brand) {
 		return null;
+	  }
+  
+	  // If brandDetails is not provided, return the existing brand data
+	  if (!brandDetails) {
+		return brand;
 	  }
   
 	  // Update only the `imagePath` (and isVisible if you wish)
@@ -645,6 +650,7 @@ const getBrandImagesFromDB = withDatabaseConnectivity(async () => {
 	  }
 	}
   });
+  
   
 // Export all errors and database utility functions as required
 export {

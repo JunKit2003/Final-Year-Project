@@ -1,5 +1,3 @@
-// updateBrandImage.js
-
 import {
   pingDatabase,
   DatabaseConnectionError,
@@ -8,6 +6,8 @@ import {
 } from "../../database/utils.js";
 
 import uploadBrandImage from "../../file-uploads/uploadBrandImage.js";
+import { unlink } from "fs/promises"; // For file deletion
+import { join } from "path";
 
 export default async function updateBrandImage(req, res) {
   try {
@@ -17,6 +17,13 @@ export default async function updateBrandImage(req, res) {
     // Extract the brand ID from params
     const { id } = req.params;
 
+    // Fetch the current brand details from the database
+    const currentBrand = await updateBrandImageInDB(id);
+
+    if (!currentBrand) {
+      return res.status(404).json({ message: "Brand not found" });
+    }
+
     // If your form-data includes other text fields, they land in req.body
     const brandDetails = req.body;
     console.log("Received brand details:", brandDetails);
@@ -24,23 +31,30 @@ export default async function updateBrandImage(req, res) {
     // Grab the files array from req.files
     const { files } = req;
 
-    // If there is an uploaded file, save it
+    // If there is an uploaded file, handle the file update
     if (files && files.length > 0) {
       // We only take the first file in this example
       const file = files[0];
 
-      // The folder images/brand_images is where we store the file
-      const newImagePath = await uploadBrandImage(
-        id,
-        file,
-        "images/brand_images"
-      );
+      // Remove the previous image file if it exists
+      if (currentBrand.imagePath) {
+        const oldImagePath = join("images", "brand_images", currentBrand.imagePath);
+        try {
+          await unlink(oldImagePath);
+          console.log(`Deleted old image: ${oldImagePath}`);
+        } catch (error) {
+          console.warn(`Could not delete old image: ${oldImagePath}`, error);
+        }
+      }
 
-      // Store the filename in brandDetails.imagePath
+      // Upload the new image
+      const newImagePath = await uploadBrandImage(id, file, "images/brand_images");
+
+      // Store the new filename in brandDetails.imagePath
       brandDetails.imagePath = newImagePath;
     }
 
-    // Update the brand image path in DB
+    // Update the brand image path in the database
     const updatedBrand = await updateBrandImageInDB(id, brandDetails);
 
     if (!updatedBrand) {
