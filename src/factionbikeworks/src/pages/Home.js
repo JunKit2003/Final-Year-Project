@@ -1,31 +1,44 @@
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
-import { Box, Typography, Grid, Card, CardContent, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  CardMedia,
+} from "@mui/material";
 import Slider from "react-slick";
-import axios from "axios"; // Import axios
+import { Link } from "react-router-dom";
+import axios from "axios";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 function Home() {
   const [images, setImages] = useState([]);
-  const [brands, setBrands] = useState([]); // Changed from categories to brands
-  const [showAllBrands, setShowAllBrands] = useState(false); // Changed state name
+  const [brands, setBrands] = useState([]);
+  const [showAllBrands, setShowAllBrands] = useState(false);
 
   useEffect(() => {
-    // Fetch advertisement images using axios
+    // 1) Fetch Banner Images
     const fetchImages = async () => {
       try {
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`, {}, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true, // Include cookies if necessary
-        });
-
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`,
+          {},
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
         const data = response.data;
         if (data.banners) {
-          const imageUrls = data.banners.map((banner) =>
-            `${process.env.REACT_APP_BACKEND_HOST}${banner.imageUrl}`
+          const imageUrls = data.banners.map(
+            (banner) =>
+              `${process.env.REACT_APP_BACKEND_HOST}${banner.imageUrl}`
           );
           setImages(imageUrls);
         }
@@ -34,29 +47,33 @@ function Home() {
       }
     };
 
-    // Fetch brands dynamically using axios
-    const fetchBrands = async () => {
+    // 2) Fetch Brand Images
+    const fetchBrandImages = async () => {
       try {
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_HOST}/api/product/getBrands`, {}, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        });
+        const response = await axios.post(
+          `${process.env.REACT_APP_BACKEND_HOST}/api/product/getBrandImages`,
+          {},
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
 
         const data = response.data;
-        console.log("Fetched brands:", data.brands); // Log brands data to console
+        console.log("Fetched brand images:", data.brands);
         setBrands(data.brands);
       } catch (error) {
-        console.error("Error fetching brands:", error);
+        console.error("Error fetching brand images:", error);
       }
     };
 
     fetchImages();
-    fetchBrands();
+    fetchBrandImages();
   }, []);
 
-  // Define the settings for the slider component
+  // Carousel settings
   const settings = {
     dots: true,
     infinite: true,
@@ -67,7 +84,7 @@ function Home() {
     autoplaySpeed: 3000,
   };
 
-  // Display all brands or limit the display to the first 5
+  // Show all or first 5 brands
   const displayedBrands = showAllBrands ? brands : brands.slice(0, 5);
 
   return (
@@ -101,23 +118,45 @@ function Home() {
         <Typography variant="h4" align="center" gutterBottom>
           Shop by Brands
         </Typography>
+
         <Grid container spacing={4}>
-          {/* Display dynamically fetched brands */}
-          {displayedBrands.map((brand, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h5" component="div">
-                    {brand} {/* Display brand name */}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+          {displayedBrands.map((brand, index) => {
+            const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
+            return (
+              <Grid item xs={12} sm={6} md={4} key={brand.id || index}>
+                {/* 
+                  Link to /catalog/brandName 
+                  So that when clicked, user is redirected to brand filter 
+                */}
+                <Link
+                  to={`/catalog/${brand.brandName}`} 
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  <Card>
+                    {/* Brand Image */}
+                    {brand.imageUrl && (
+                      <CardMedia
+                        component="img"
+                        height="200"
+                        image={fullImageUrl}
+                        alt={brand.brandName}
+                        style={{ objectFit: "contain" }}
+                      />
+                    )}
+                    <CardContent>
+                      <Typography variant="h5" component="div">
+                        {brand.brandName}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </Grid>
+            );
+          })}
         </Grid>
 
         {/* Show More Button */}
-        {!showAllBrands && (
+        {!showAllBrands && brands.length > 5 && (
           <Box sx={{ textAlign: "center", marginTop: 2 }}>
             <Button variant="contained" onClick={() => setShowAllBrands(true)}>
               Show More

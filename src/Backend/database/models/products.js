@@ -78,7 +78,7 @@ export default (sequelize, DataTypes) => {
       if (!existingBrand) {
         await sequelize.models.BrandImages.create({
           brandName: brand,
-          imagePath: "NoImage.jpg", // Default to an empty image path or placeholder
+          imagePath: "NoImage", // Default to an empty image path or placeholder
           isVisible: true, // Default visibility
         });
         console.log(`Added brand: ${brand} to brand_images table.`);

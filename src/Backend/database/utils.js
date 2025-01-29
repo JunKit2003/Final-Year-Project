@@ -311,20 +311,60 @@ const updateProductToDB = withDatabaseConnectivity(
 
 // Delete a product
 const deleteProductFromDB = withDatabaseConnectivity(async (id) => {
-  try {
-    const product = await db.Products.findByPk(id);
-    if (!product) {
-      throw new ProductNotFoundError();
-    }
-    const folderPath = path.join("images", "product_images", id.toString());
-    if (fs.existsSync(folderPath)) {
-      await fs.promises.rm(folderPath, { recursive: true, force: true });
-    }
-    await product.destroy();
-  } catch (error) {
-    throw error;
-  }
-});
+	try {
+	  // 1) Find the product
+	  const product = await db.Products.findByPk(id);
+	  if (!product) {
+		throw new ProductNotFoundError();
+	  }
+	  
+	  // Capture the brand field from the product row
+	  // (Assumes your products table has a column named 'brand')
+	  const { brand } = product;
+  
+	  // 2) Remove the product's images (folder per product) if they exist
+	  const folderPath = path.join("images", "product_images", id.toString());
+	  if (fs.existsSync(folderPath)) {
+		await fs.promises.rm(folderPath, { recursive: true, force: true });
+	  }
+  
+	  // 3) Delete the product
+	  await product.destroy();
+  
+	  // 4) Check if this brand is still referenced by any other product
+	  const remainingProducts = await db.Products.findAll({
+		where: { brand },
+	  });
+  
+	  if (remainingProducts.length === 0) {
+		// 4a) No more products for this brand -> remove brand_images entry
+		// IMPORTANT: brand_images table likely stores brandName in a column called "brandName"
+		const brandImage = await db.BrandImages.findOne({
+		  where: { brandName: brand },
+		});
+  
+		if (brandImage) {
+		  // 4b) Remove the brand image file from the server
+		  // brandImage.imagePath might be "4_1234.jpg" or similar
+		  const brandImageFilePath = path.join(
+			"images", 
+			"brand_images", 
+			path.basename(brandImage.imagePath)
+		  );
+  
+		  if (fs.existsSync(brandImageFilePath)) {
+			await fs.promises.rm(brandImageFilePath, { force: true });
+		  }
+  
+		  // 4c) Delete record from brand_images table
+		  await brandImage.destroy();
+		}
+	  }
+	} catch (error) {
+	  throw error; // Rethrow so your upper-level try/catch can handle it
+	}
+  });
+  
 
   
 // Banner-related functions
