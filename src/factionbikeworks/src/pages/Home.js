@@ -85,7 +85,7 @@ function Home() {
   };
 
   // Show all or first 5 brands
-  const displayedBrands = showAllBrands ? brands : brands.slice(0, 5);
+  const displayedBrands = showAllBrands ? brands : brands.slice(0, 3);
 
   return (
     <div style={{ margin: 0, padding: 0 }}>
@@ -143,7 +143,7 @@ function Home() {
                         style={{ objectFit: "contain" }}
                       />
                     )}
-                    <CardContent>
+                    <CardContent sx={{ textAlign: "center" }}>
                       <Typography variant="h5" component="div">
                         {brand.brandName}
                       </Typography>
@@ -156,7 +156,7 @@ function Home() {
         </Grid>
 
         {/* Show More Button */}
-        {!showAllBrands && brands.length > 5 && (
+        {!showAllBrands && brands.length > 3 && (
           <Box sx={{ textAlign: "center", marginTop: 2 }}>
             <Button variant="contained" onClick={() => setShowAllBrands(true)}>
               Show More

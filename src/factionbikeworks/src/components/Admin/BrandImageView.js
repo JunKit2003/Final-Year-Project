@@ -4,9 +4,7 @@ import LoadingButton from "../LoadingButton";
 
 const BrandImageView = ({
   brandImages,
-  handleDeleteBrandImage,
   handleEditBrandImage,
-  isDeleting,
   isEditing,
 }) => {
   return (
@@ -68,16 +66,6 @@ const BrandImageView = ({
                 isLoading={isEditing}
               >
                 Edit
-              </LoadingButton>
-
-              {/* Delete Button */}
-              <LoadingButton
-                variant="outlined"
-                color="error"
-                onClick={() => handleDeleteBrandImage(id)}
-                isLoading={isDeleting}
-              >
-                Delete
               </LoadingButton>
             </Box>
           </Box>
