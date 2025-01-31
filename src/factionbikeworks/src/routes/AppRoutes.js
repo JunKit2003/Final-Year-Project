@@ -17,6 +17,8 @@ const CheckoutPage = lazy(() => import('../pages/CheckoutPage.js'));
 const PaymentSuccess = lazy(() => import('../pages/PaymentSuccess.js'));
 const PaymentFailed = lazy(() => import('../pages/PaymentFailed.js'));
 const ViewOrderList = lazy(() => import('../pages/Admin/ViewOrderList.js'))
+const OrderHistory = lazy(() => import('../pages/OrderHistory.js'))
+
 
 const AppRoutes = () => {
   return (
@@ -35,7 +37,7 @@ const AppRoutes = () => {
         <Route path="/paymentSuccess" element={<PaymentSuccess />} />
         <Route path="/paymentFailed" element={<PaymentFailed />} />
         <Route path="/admin/viewOrderList/:orderId" element={<ViewOrderList />} />
-
+        <Route path="/orderHistory" element={<OrderHistory />} />
 
         
       </Routes>

@@ -26,6 +26,7 @@ import {
     getBrandImages,
     updateBrandImage,
     cancelOrder,
+    getUserOrders,
 } from '../api-endpoints/index.js'; // Import necessary endpoints
 
 import { uploadMultiple } from '../file-uploads/multerConfig.js';
@@ -71,5 +72,6 @@ router.post('/cart/createOrder', createOrder);
 router.patch('/cart/markOrderPaidAndClearCart', markOrderPaidAndClearCart);  
 router.post('/cart/getOrders', getOrders);
 router.patch('/cart/fulfillOrders/:orderId', fulfillOrders);
+router.get('/cart/getUserOrders/:userId', getUserOrders);
 
 export default router;

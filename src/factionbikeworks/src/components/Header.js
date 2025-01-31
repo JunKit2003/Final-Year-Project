@@ -22,7 +22,8 @@ const Header = () => {
     goToHomePage,
     goToCatalogPage,
     goToLoginPage,
-    goToCartPage,  // <--- Make sure this is imported from useGlobalNavigation
+    goToCartPage, 
+    goToOrderHistoryPage, // <--- Make sure this is imported from useGlobalNavigation
   } = useGlobalNavigation();
   
   // State to manage login status, user name, and user category
@@ -143,6 +144,13 @@ const Header = () => {
         {isLoggedIn && (
           <ListItemButton onClick={goToCartPage}>
             <ListItemText primary="Cart" />
+          </ListItemButton>
+        )}
+
+        {/* ADD THE ORDER HISTORY BUTTON HERE */}
+        {isLoggedIn && (
+          <ListItemButton onClick={goToOrderHistoryPage}>
+            <ListItemText primary="Order History" />
           </ListItemButton>
         )}
 

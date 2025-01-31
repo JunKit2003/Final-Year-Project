@@ -15,7 +15,7 @@ const useGlobalNavigation = () => {
   const goToHomePage = () => navigate("/");
   const goToCheckoutPage = () => navigate("/checkoutPage");
   const goToViewOrderListPage = (orderId) => navigate(`admin/viewOrderList/${orderId}`)
-
+  const goToOrderHistoryPage = () => navigate("/orderHistory");
   // Add `sessionId` to PaymentSuccessPage URL
   const goToPaymentSuccessPage = (sessionId) => {
     if (!sessionId) {
@@ -41,6 +41,7 @@ const useGlobalNavigation = () => {
     goToPaymentSuccessPage,
     goToPaymentFailedPage,
     goToViewOrderListPage,
+    goToOrderHistoryPage,
   };
 };
 

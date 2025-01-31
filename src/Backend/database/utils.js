@@ -693,6 +693,31 @@ const getBrandImagesFromDB = withDatabaseConnectivity(async () => {
   
 
 
+  const getUserOrdersFromDB = withDatabaseConnectivity(async (userId) => {
+	try {
+	  const orders = await db.Order.findAll({
+		where: { userId },
+		include: [
+		  {
+			model: db.OrderItem,
+			as: "items",
+			// If you want product/variation data too, you can nest another include here:
+			// include: [{ model: db.Variations, as: "variation" }]
+		  },
+		],
+		order: [["createdAt", "DESC"]],
+	  });
+  
+	  // Convert to plain JS objects
+	  return orders.map((o) => o.get({ plain: true }));
+	} catch (error) {
+	  // Optionally wrap the error in a custom Error class
+	  throw error;
+	}
+  });
+  
+
+
 // Export all errors and database utility functions as required
 export {
     // Exporting product utility functions
@@ -725,6 +750,7 @@ export {
 	removeCartItemFromDB,
 	setOrderStatusInDB,
 	getAllOrdersFromDB,
+	getUserOrdersFromDB,
 	
     // Exporting error classes
     DatabaseError,
