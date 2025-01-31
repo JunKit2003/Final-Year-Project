@@ -10,16 +10,22 @@ import { db } from "../../database/index.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function createOrder(req, res) {
-  const transaction = await db.sequelize.transaction(); // Start a transaction
+  const transaction = await db.sequelize.transaction();
 
   try {
-    // 1) Ping the database to ensure connectivity
+    // 1) Ping DB
     await pingDatabase();
 
-    // 2) Extract necessary data from req.body
-    const { user_id, items, shipping_address, total_amount } = req.body;
+    // 2) Extract data including recipient_name (if you made it required)
+    const {
+      user_id,
+      items,
+      shipping_address,
+      total_amount,
+      recipient_name, // NEW
+    } = req.body;
 
-    // 3) Validate the input
+    // 3) Validate input
     if (!user_id) {
       throw new InputValidationError("Missing 'user_id' in the request body!");
     }
@@ -32,19 +38,24 @@ export default async function createOrder(req, res) {
     if (typeof total_amount === "undefined") {
       throw new InputValidationError("Missing 'total_amount' in the request body!");
     }
+    if (!recipient_name) {
+      // or if you want to allow optional, remove this check
+      throw new InputValidationError("Missing 'recipient_name' in the request body!");
+    }
 
-    // 4) Create a new Order in the database within the transaction
+    // 4) Create the Order row
     const newOrder = await db.Order.create(
       {
         userId: user_id,
         shippingAddress: shipping_address,
         totalAmount: total_amount,
+        recipientName: recipient_name, // NEW
         status: "Pending",
       },
       { transaction }
     );
 
-    // 5) Process OrderItems and build Stripe line items
+    // 5) Build Stripe line items & create OrderItems
     const lineItems = [];
 
     for (const item of items) {
@@ -52,25 +63,24 @@ export default async function createOrder(req, res) {
         throw new InputValidationError("Each item requires 'variation_id' and 'quantity'!");
       }
 
-      // Fetch the variation to validate its existence and get the price
-      const variation = await db.Variations.findByPk(item.variation_id, { transaction });
+      const variation = await db.Variations.findByPk(item.variation_id, {
+        transaction,
+      });
       if (!variation) {
         throw new InputValidationError(`Variation with id ${item.variation_id} not found.`);
       }
 
-      // Create an OrderItem in the database
       const price = parseFloat(variation.price);
       await db.OrderItem.create(
         {
           orderId: newOrder.id,
           variationId: item.variation_id,
           quantity: item.quantity,
-          price: price,
+          price,
         },
         { transaction }
       );
 
-      // Build line item for Stripe Checkout
       lineItems.push({
         price_data: {
           currency: "myr",
@@ -83,29 +93,30 @@ export default async function createOrder(req, res) {
       });
     }
 
-    // 6) Create a Stripe Checkout Session
+
+    const FRONTEND_URL = `${process.env.HOST}:${process.env.PORT_FRONTEND}`;
+
+    // 6) Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${process.env.HOST}:3000/paymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.HOST}:3000/paymentFailed`,
+      success_url: `${FRONTEND_URL}/paymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${FRONTEND_URL}/paymentFailed?session_id={CHECKOUT_SESSION_ID}`,
       metadata: {
         orderId: newOrder.id,
         userId: user_id,
       },
     });
 
-    // Commit the transaction if everything succeeds
+    // Commit
     await transaction.commit();
 
-    // 7) Return the sessionId for the frontend to redirect
+    // 7) Return sessionId
     return res.status(200).json({ sessionId: session.id });
   } catch (error) {
-    // Rollback the transaction to undo any changes in the database
     await transaction.rollback();
 
-    // Handle known errors
     if (error instanceof InputValidationError) {
       return res.status(400).json({ message: error.message });
     } else if (error instanceof DatabaseConnectionError) {

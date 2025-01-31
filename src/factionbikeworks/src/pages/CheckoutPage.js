@@ -16,6 +16,7 @@ const CheckoutPage = () => {
   const [sessionUser, setSessionUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
+  const [recipientName, setRecipientName] = useState(""); // NEW
   const [address, setAddress] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -103,7 +104,11 @@ const CheckoutPage = () => {
 
   // 4) Handle placing the order
   const handlePlaceOrder = async () => {
-    if (!address) {
+    if (!recipientName.trim()) {
+      alert("Please enter a recipient name.");
+      return;
+    }
+    if (!address.trim()) {
       alert("Please enter a shipping address.");
       return;
     }
@@ -118,11 +123,12 @@ const CheckoutPage = () => {
 
       const payload = {
         user_id: sessionUser.id,
+        recipient_name: recipientName, // NEW
+        shipping_address: address,
         items: cartItems.map((item) => ({
           variation_id: item.variation.id,
           quantity: item.quantity,
         })),
-        shipping_address: address,
         total_amount: totalAmount,
       };
 
@@ -183,6 +189,18 @@ const CheckoutPage = () => {
           {error}
         </Typography>
       )}
+
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Typography variant="h6">Recipient Name</Typography>
+        <TextField
+          fullWidth
+          label="Recipient Name"
+          variant="outlined"
+          value={recipientName}
+          onChange={(e) => setRecipientName(e.target.value)}
+          margin="normal"
+        />
+      </Paper>
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6">Shipping Address</Typography>

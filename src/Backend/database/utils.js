@@ -691,7 +691,8 @@ const getBrandImagesFromDB = withDatabaseConnectivity(async () => {
 	}
   });
   
-  
+
+
 // Export all errors and database utility functions as required
 export {
     // Exporting product utility functions
@@ -724,7 +725,7 @@ export {
 	removeCartItemFromDB,
 	setOrderStatusInDB,
 	getAllOrdersFromDB,
-
+	
     // Exporting error classes
     DatabaseError,
     DatabaseConnectionError,

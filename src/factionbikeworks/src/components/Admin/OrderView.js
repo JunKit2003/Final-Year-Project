@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Typography, Button, Pagination } from "@mui/material";
-import LoadingButton from "../LoadingButton";
+import { Box, Typography, Pagination, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom"; // for redirecting
 
 const OrderView = ({
   orders,
-  handleFulfillOrder, // Called when user clicks "Fulfill Order"
-  isUpdating,         // Indicates if an order-fulfill operation is in progress
   itemsPerPage = 6,
   resetPage,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const shouldResetPage = useRef(false);
+  const navigate = useNavigate();
 
   const totalPages = Math.ceil(orders.length / itemsPerPage);
 
@@ -29,7 +28,7 @@ const OrderView = ({
     }
   }, [totalPages, currentPage]);
 
-  // Slice the orders to show for current page
+  // Slice the orders for the current page
   const currentOrders = orders.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -37,6 +36,13 @@ const OrderView = ({
 
   const handlePageChange = (event, page) => {
     setCurrentPage(page);
+  };
+
+  // Navigate to /admin/viewOrderList/:orderId
+  const handleViewOrder = (orderId) => {
+    // Adjust your path if needed:
+    // If your route is "/admin/viewOrderList/:orderId":
+    navigate(`/admin/viewOrderList/${orderId}`);
   };
 
   if (orders.length === 0) {
@@ -74,52 +80,58 @@ const OrderView = ({
           width: "100%",
         }}
       >
-        {currentOrders.map((order) => (
-          <Box
-            key={order.id}
-            sx={{
-              width: "300px",
-              border: "1px solid grey",
-              borderRadius: 2,
-              p: 2,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            {/* Order details */}
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              Order #{order.id}
-            </Typography>
-            <Typography>User ID: {order.userId}</Typography>
-            <Typography>Shipping: {order.shippingAddress}</Typography>
-            <Typography>Total: RM{order.totalAmount}</Typography>
-            <Typography>Status: {order.status}</Typography>
-            <Typography>
-              Items: {Array.isArray(order.items) ? order.items.length : 0}
-            </Typography>
+        {currentOrders.map((order) => {
+          const {
+            id,
+            userId,
+            shippingAddress,
+            totalAmount,
+            status,
+            items,
+            recipientName, // NEW
+          } = order;
 
-            {/* Action buttons */}
-            <Box sx={{ mt: 2 }}>
-              {/* Fulfill Order Button */}
-              <LoadingButton
-                variant="outlined"
-                color="primary"
-                onClick={() => handleFulfillOrder(order.id)}
-                isLoading={isUpdating}
-                disabled={
-                  order.status === "Completed" ||
-                  order.status === "Fulfilled" ||
-                  order.status === "Cancelled"
-                }
-              >
-                {order.status === "Fulfilled" || order.status === "Completed"
-                  ? "Fulfilled"
-                  : "Fulfill Order"}
-              </LoadingButton>
+          return (
+            <Box
+              key={id}
+              sx={{
+                width: "300px",
+                border: "1px solid grey",
+                borderRadius: 2,
+                p: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 1 }}>
+                Order #{id}
+              </Typography>
+              <Typography>User ID: {userId}</Typography>
+              {/* Show recipientName if available */}
+              {recipientName && (
+                <Typography>Recipient: {recipientName}</Typography>
+              )}
+              <Typography>Shipping: {shippingAddress}</Typography>
+              <Typography>Total: RM{totalAmount}</Typography>
+              <Typography>Status: {status}</Typography>
+              <Typography>
+                Items: {Array.isArray(items) ? items.length : 0}
+              </Typography>
+
+              {/* Always show the "View Order" button */}
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => handleViewOrder(id)}
+                >
+                  View Order
+                </Button>
+              </Box>
             </Box>
-          </Box>
-        ))}
+          );
+        })}
       </Box>
 
       {/* Pagination */}

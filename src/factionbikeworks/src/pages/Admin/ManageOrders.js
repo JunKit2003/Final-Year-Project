@@ -1,30 +1,27 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Box, Typography, Dialog, DialogTitle } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 import PopupDisplay from "../../components/PopupDisplay";
 import Loading from "../../components/Loading";
-import LoadingButton from "../../components/LoadingButton";
-import FilterSearch from "../../components/FilterSearch";
-import OrderView from "../../components/Admin/OrderView"; // You’ll create something like ProductView, but for Orders
-import { formatInput } from "../../utils";
-
-/**
- * ManageOrders:
- * - Fetches and displays a list of orders.
- * - Allows basic filtering (e.g. by status, user ID).
- * - Provides a button on each order to mark it as fulfilled/completed.
- */
+import OrderView from "../../components/Admin/OrderView";
 
 const ManageOrders = () => {
-  // State for orders + filtered orders
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
-
-  // Optional: store distinct statuses or user IDs for filtering
-  const [statusOptions, setStatusOptions] = useState([]);
   const [resetPage, setResetPage] = useState(false);
-
-  // State for UI feedback
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState(null);
@@ -32,39 +29,32 @@ const ManageOrders = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const autoHideDuration = 6000;
 
-  // Example filter config (similar to ManageProducts)
-  // Adjust as needed for your order fields
-  const filters = [
-    { label: "Status", value: "status" },
-    { label: "User ID", value: "userId" },
-  ];
+  // Confirmation Dialog State
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+
+  // Dropdown filter for Status
+  const [selectedStatus, setSelectedStatus] = useState("All");
+
+  // Search Inputs
+  const [typedUserId, setTypedUserId] = useState("");
+  const [typedRecipientName, setTypedRecipientName] = useState("");
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  // 1) Fetch all orders
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Example endpoint – adjust to match your backend route
-      // Could be POST or GET, depending on your design
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_HOST}/api/cart/getOrders`
       );
 
-      // Suppose the response data has { orders: [...] }
       const ordersFetched = response.data.orders || [];
       setOrders(ordersFetched);
       setFilteredOrders(ordersFetched);
-
-      // If you want status-based filtering, gather distinct statuses
-      const uniqueStatuses = Array.from(
-        new Set(ordersFetched.map((order) => formatInput(order.status)))
-      );
-      setStatusOptions(uniqueStatuses);
     } catch (error) {
-      console.log(error);
       setSnackbarMessage(
         error.response?.data?.message || "Error fetching orders!"
       );
@@ -75,57 +65,89 @@ const ManageOrders = () => {
     }
   };
 
-  // 2) Handle filter + search
-  // Similar logic to ManageProducts => FilterSearch
-  const handleSearch = (searchCriteria) => {
-    const { searchQueries, selectedFilters } = searchCriteria;
+  // Whenever selectedStatus, typedUserId, or typedRecipientName changes, re-filter the orders
+  useEffect(() => {
+    filterOrders();
+    // eslint-disable-next-line
+  }, [selectedStatus, typedUserId, typedRecipientName]);
 
-    let filtered = orders;
+  // Filtering Logic
+  const filterOrders = () => {
+    let updated = [...orders];
 
-    if (selectedFilters.includes("status") && searchQueries.status) {
-      filtered = filtered.filter((order) =>
-        order.status
-          .toLowerCase()
-          .includes(searchQueries.status.toLowerCase())
-      );
-    }
-
-    if (selectedFilters.includes("userId") && searchQueries.userId) {
-      filtered = filtered.filter(
+    // 1) Filter by userId if typed
+    if (typedUserId.trim() !== "") {
+      updated = updated.filter(
         (order) =>
           order.userId &&
-          order.userId.toString().includes(searchQueries.userId.toString())
+          order.userId.toString().includes(typedUserId.trim())
       );
     }
 
-    setFilteredOrders(filtered);
+    // 2) Filter by recipient name if typed
+    if (typedRecipientName.trim() !== "") {
+      updated = updated.filter(
+        (order) =>
+          order.recipientName &&
+          order.recipientName.toLowerCase().includes(typedRecipientName.trim().toLowerCase())
+      );
+    }
+
+    // 3) Filter by status if not "All"
+    if (selectedStatus !== "All") {
+      updated = updated.filter((order) => order.status === selectedStatus);
+    }
+
+    setFilteredOrders(updated);
     setResetPage(true);
   };
 
-  // 3) Mark an order as “Fulfilled” (or “Completed”)
-  // Example endpoint => /api/order/fulfill/:orderId
-  // Adjust as needed
-  const handleFulfillOrder = async (orderId) => {
+  // Handle Status Dropdown Change
+  const handleStatusChange = (event) => {
+    setSelectedStatus(event.target.value);
+  };
+
+  // Handle User ID Input Change
+  const handleUserIdChange = (event) => {
+    setTypedUserId(event.target.value);
+  };
+
+  // Handle Recipient Name Input Change
+  const handleRecipientNameChange = (event) => {
+    setTypedRecipientName(event.target.value);
+  };
+
+  // Show confirmation dialog
+  const handleConfirmFulfill = (orderId) => {
+    setSelectedOrderId(orderId);
+    setConfirmDialogOpen(true);
+  };
+
+  // Actually complete the order
+  const handleFulfillOrder = async () => {
+    if (!selectedOrderId) return;
     setIsUpdating(true);
+    setConfirmDialogOpen(false);
+
     try {
       await axios.patch(
-        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/fulfill/${orderId}`,
+        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/fulfillOrders/${selectedOrderId}`,
         {}
       );
-      // Refresh data or update local state
-      setSnackbarMessage("Order marked as fulfilled!");
+
+      setSnackbarMessage("Order marked as Completed!");
       setSeverity("success");
       setOpenSnackbar(true);
 
-      // Update state
+      // Update local state
       setOrders((prev) =>
         prev.map((o) =>
-          o.id === orderId ? { ...o, status: "Fulfilled" } : o
+          o.id === selectedOrderId ? { ...o, status: "Completed" } : o
         )
       );
       setFilteredOrders((prev) =>
         prev.map((o) =>
-          o.id === orderId ? { ...o, status: "Fulfilled" } : o
+          o.id === selectedOrderId ? { ...o, status: "Completed" } : o
         )
       );
     } catch (error) {
@@ -136,10 +158,10 @@ const ManageOrders = () => {
       setOpenSnackbar(true);
     } finally {
       setIsUpdating(false);
+      setSelectedOrderId(null);
     }
   };
 
-  // Close the snackbar
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
     setSnackbarMessage(null);
@@ -159,28 +181,53 @@ const ManageOrders = () => {
         boxSizing: "border-box",
       }}
     >
-      {/* Title */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4">Manage Orders</Typography>
       </Box>
 
-      {/* Search and Filter Component */}
-      <FilterSearch
-        filters={filters}
-        onSearch={handleSearch}
-        categoryOptions={statusOptions} // or rename to statusOptions
-      />
+      {/* Search By & Filters Section */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+        {/* Status Dropdown */}
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            label="Status"
+            value={selectedStatus}
+            onChange={handleStatusChange}
+          >
+            <MenuItem value="All">All</MenuItem>
+            <MenuItem value="Pending">Pending</MenuItem>
+            <MenuItem value="Paid">Paid</MenuItem>
+            <MenuItem value="Completed">Completed</MenuItem>
+          </Select>
+        </FormControl>
 
-      {/* OrderView (similar to ProductView) – displays a paginated list of orders */}
+        {/* User ID Search Box */}
+        <TextField
+          label="Search by User ID"
+          variant="outlined"
+          value={typedUserId}
+          onChange={handleUserIdChange}
+        />
+
+        {/* Recipient Name Search Box */}
+        <TextField
+          label="Search by Recipient Name"
+          variant="outlined"
+          value={typedRecipientName}
+          onChange={handleRecipientNameChange}
+        />
+      </Box>
+
+      {/* Orders List */}
       <OrderView
         orders={filteredOrders}
-        handleFulfillOrder={handleFulfillOrder}
+        handleFulfillOrder={handleConfirmFulfill}
         isUpdating={isUpdating}
         itemsPerPage={50}
         resetPage={resetPage}
       />
 
-      {/* Snackbar for displaying errors or success messages */}
       <PopupDisplay
         message={snackbarMessage}
         severity={severity}
@@ -188,6 +235,24 @@ const ManageOrders = () => {
         onClose={handleCloseSnackbar}
         autoHideDuration={autoHideDuration}
       />
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
+        <DialogTitle>Confirm Order Completion</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to mark this order as <strong>Completed</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialogOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleFulfillOrder} color="primary" variant="contained">
+            Yes, Mark as Completed
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

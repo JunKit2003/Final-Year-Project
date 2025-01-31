@@ -16,6 +16,7 @@ const PasswordReset = lazy(() => import('../pages/PasswordReset.js'));
 const CheckoutPage = lazy(() => import('../pages/CheckoutPage.js'));
 const PaymentSuccess = lazy(() => import('../pages/PaymentSuccess.js'));
 const PaymentFailed = lazy(() => import('../pages/PaymentFailed.js'));
+const ViewOrderList = lazy(() => import('../pages/Admin/ViewOrderList.js'))
 
 const AppRoutes = () => {
   return (
@@ -33,6 +34,9 @@ const AppRoutes = () => {
         <Route path="/checkoutPage" element={<CheckoutPage />} />
         <Route path="/paymentSuccess" element={<PaymentSuccess />} />
         <Route path="/paymentFailed" element={<PaymentFailed />} />
+        <Route path="/admin/viewOrderList/:orderId" element={<ViewOrderList />} />
+
+
         
       </Routes>
     </Suspense>
