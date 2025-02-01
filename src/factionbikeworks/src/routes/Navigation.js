@@ -14,8 +14,11 @@ const useGlobalNavigation = () => {
   const goToViewProductPage = (productId) => navigate(`/viewProduct/${productId}`);
   const goToHomePage = () => navigate("/");
   const goToCheckoutPage = () => navigate("/checkoutPage");
-  const goToViewOrderListPage = (orderId) => navigate(`admin/viewOrderList/${orderId}`)
+  const goToViewOrderListPage = (orderId) => navigate(`admin/viewOrderList/${orderId}`);
   const goToOrderHistoryPage = () => navigate("/orderHistory");
+  const goToCustomerViewOrderListPage = (userId, orderId) => navigate(`/customerViewOrderList/${userId}/${orderId}`);
+
+
   // Add `sessionId` to PaymentSuccessPage URL
   const goToPaymentSuccessPage = (sessionId) => {
     if (!sessionId) {
@@ -42,6 +45,7 @@ const useGlobalNavigation = () => {
     goToPaymentFailedPage,
     goToViewOrderListPage,
     goToOrderHistoryPage,
+    goToCustomerViewOrderListPage,
   };
 };
 

@@ -38,3 +38,4 @@ export { default as getOrders } from './cart/getOrders.js';
 export { default as fulfillOrders } from './cart/fulfillOrders.js';
 export { default as cancelOrder } from './cart/cancelOrder.js';
 export { default as getUserOrders } from './cart/getUserOrders.js';
+export { default as getCustomerOrder } from './cart/getCustomerOrder.js';

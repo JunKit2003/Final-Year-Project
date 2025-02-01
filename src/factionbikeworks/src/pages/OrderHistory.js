@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Header from "../components/Header"; // Import Header
+import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
+import Header from "../components/Header";
 import { Box, Typography, Paper, Button } from "@mui/material";
 
 const OrderHistory = () => {
@@ -8,6 +9,8 @@ const OrderHistory = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const navigate = useNavigate(); // ✅ Initialize navigate
 
   useEffect(() => {
     // 1) Authenticate the user
@@ -59,7 +62,7 @@ const OrderHistory = () => {
   if (loading) {
     return (
       <Box>
-        <Header /> {/* Include Header */}
+        <Header />
         <Box sx={{ p: 3 }}>
           <Typography>Loading your order history...</Typography>
         </Box>
@@ -80,7 +83,7 @@ const OrderHistory = () => {
 
   return (
     <Box>
-      <Header /> {/* Include Header */}
+      <Header />
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom>
           My Order History
@@ -102,12 +105,11 @@ const OrderHistory = () => {
                 <Typography>Recipient: {order.recipientName}</Typography>
               )}
 
+              {/* ✅ Pass both userId and orderId in the URL */}
               <Button
                 variant="outlined"
                 sx={{ mt: 1 }}
-                onClick={() =>
-                  (window.location.href = `/vieworderlist/${order.id}`)
-                }
+                onClick={() => navigate(`/customerViewOrderList/${order.userId}/${order.id}`)}
               >
                 View Details
               </Button>

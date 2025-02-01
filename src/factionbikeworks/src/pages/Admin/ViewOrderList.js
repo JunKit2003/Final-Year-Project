@@ -136,8 +136,11 @@ const ViewOrderList = () => {
       setConfirmDialogOpen(false);
 
       await axios.patch(
-        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/fulfillOrders/${order.id}`
+        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/fulfillOrders/${order.id}`,
+        {}, // PATCH requires a body, even if empty
+        { withCredentials: true } // Ensures session cookies are sent
       );
+      
 
       // Update state to "Completed"
       setOrder({ ...order, status: "Completed" });
