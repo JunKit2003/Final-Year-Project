@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Box, Typography } from "@mui/material";
 import Header from "../components/Header";
+import { ThemeContext } from "../App"; // Import Theme Context
 
 const Chatbot = () => {
+  const { darkMode } = useContext(ThemeContext); // Access Dark Mode state
+
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", color: "text.primary", p: 3 }}>
       <Header />
@@ -24,6 +27,8 @@ const Chatbot = () => {
             maxWidth: "800px",
             borderRadius: "10px",
             boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+            filter: darkMode ? "none" : "invert(1) hue-rotate(180deg)", // Only invert in Light Mode
+            transition: "filter 0.3s ease-in-out",
           }}
           allow="microphone; clipboard-read; clipboard-write"
         ></iframe>

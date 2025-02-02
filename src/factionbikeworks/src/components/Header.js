@@ -132,10 +132,6 @@ const Header = () => {
           <ListItemText primary="About" />
         </ListItemButton>
 
-        <ListItemButton onClick={goToChatbotPage}>
-          <ListItemText primary="Chatbot" />
-        </ListItemButton>
-
         {isLoggedIn && userCategory === "Admin" && (
           <ListItemButton onClick={goToAdminPage}>
             <ListItemText primary="Admin" />
@@ -151,6 +147,10 @@ const Header = () => {
             <ListItemText primary="Cart" />
           </ListItemButton>
         )}
+
+        <ListItemButton onClick={goToChatbotPage}>
+                  <ListItemText primary="Chatbot" />
+                </ListItemButton>
 
         {isLoggedIn && (
           <ListItemButton onClick={goToOrderHistoryPage}>
