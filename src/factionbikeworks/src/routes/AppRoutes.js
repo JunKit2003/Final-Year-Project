@@ -19,6 +19,7 @@ const PaymentFailed = lazy(() => import('../pages/PaymentFailed.js'));
 const ViewOrderList = lazy(() => import('../pages/Admin/ViewOrderList.js'))
 const OrderHistory = lazy(() => import('../pages/OrderHistory.js'))
 const CustomerViewOrderList = lazy(() => import('../pages/CustomerViewOrderList.js'))
+const Chatbot = lazy(() => import('../pages/Chatbot.js'))
 
 
 const AppRoutes = () => {
@@ -40,7 +41,7 @@ const AppRoutes = () => {
         <Route path="/admin/viewOrderList/:orderId" element={<ViewOrderList />} />
         <Route path="/orderHistory" element={<OrderHistory />} />
         <Route path="/customerViewOrderList/:uid/:orderId" element={<CustomerViewOrderList />} />
-
+        <Route path="/chatbot" element={<Chatbot />} />
 
         
       </Routes>
@@ -49,3 +50,7 @@ const AppRoutes = () => {
 };
 
 export default AppRoutes;
+
+
+
+

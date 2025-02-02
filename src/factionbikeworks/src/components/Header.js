@@ -25,6 +25,7 @@ const Header = () => {
     goToLoginPage,
     goToCartPage, 
     goToOrderHistoryPage,
+    goToChatbotPage,
   } = useGlobalNavigation();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -126,8 +127,13 @@ const Header = () => {
         <ListItemButton onClick={goToHomePage}>
           <ListItemText primary="Home" />
         </ListItemButton>
+
         <ListItemButton onClick={goToAboutPage}>
           <ListItemText primary="About" />
+        </ListItemButton>
+
+        <ListItemButton onClick={goToChatbotPage}>
+          <ListItemText primary="Chatbot" />
         </ListItemButton>
 
         {isLoggedIn && userCategory === "Admin" && (

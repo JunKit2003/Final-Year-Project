@@ -17,7 +17,7 @@ const useGlobalNavigation = () => {
   const goToViewOrderListPage = (orderId) => navigate(`admin/viewOrderList/${orderId}`);
   const goToOrderHistoryPage = () => navigate("/orderHistory");
   const goToCustomerViewOrderListPage = (userId, orderId) => navigate(`/customerViewOrderList/${userId}/${orderId}`);
-
+  const goToChatbotPage = () => navigate("/chatbot");
 
   // Add `sessionId` to PaymentSuccessPage URL
   const goToPaymentSuccessPage = (sessionId) => {
@@ -46,6 +46,7 @@ const useGlobalNavigation = () => {
     goToViewOrderListPage,
     goToOrderHistoryPage,
     goToCustomerViewOrderListPage,
+    goToChatbotPage,
   };
 };
 
