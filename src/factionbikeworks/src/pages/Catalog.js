@@ -110,7 +110,7 @@ function Catalog() {
       <Header />
 
       {/* Category Filter Section */}
-      <Box sx={{ padding: 4, backgroundColor: "#f9f9f9" }}>
+      <Box sx={{ padding: 4, bgcolor: "background.default", color: "text.primary" }}>
         <Typography variant="h4" align="center" gutterBottom>
           Shop by Categories
         </Typography>
@@ -187,7 +187,7 @@ function Catalog() {
                         Starting from RM{minPrice}
                       </Typography>
                       <Button variant="contained" sx={{ mt: 2 }}>
-                        View Details
+                        View Details  
                       </Button>
                     </CardContent>
                   </Card>

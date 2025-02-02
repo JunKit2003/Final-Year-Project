@@ -147,13 +147,17 @@ const ViewProduct = () => {
     <div>
       <Header />
       <Box
-        sx={{
-          padding: 4,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
+  sx={{
+    padding: 4,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    bgcolor: "background.default",
+    color: "text.primary",
+    minHeight: "100vh", // Ensures full-page height
+  }}
+>
+
         <Paper elevation={3} sx={{ padding: 3, width: "80%", maxWidth: "800px" }}>
           <Grid container spacing={4}>
             {/* Left Column: Variation Images */}

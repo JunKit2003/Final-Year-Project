@@ -3,16 +3,16 @@ import { Drawer, List, ListItemButton, ListItemText, ListItemIcon } from '@mui/m
 import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory'; // Icon for 'Manage Products'
+import { useTheme } from '@mui/material/styles'; // Import Theme Hook
 
 const Sidebar = ({ setSelectedSection }) => {
   const [activeSection, setActiveSection] = useState('Dashboard'); // Keep track of the active section
+  const theme = useTheme(); // Get current theme (dark or light)
 
   const handleSectionClick = (section) => {
     setActiveSection(section);
     setSelectedSection(section);
   };
-
-  const highlightColor = "#f0f0f0"
 
   return (
     <Drawer
@@ -23,95 +23,39 @@ const Sidebar = ({ setSelectedSection }) => {
         '& .MuiDrawer-paper': {
           width: 240,
           boxSizing: 'border-box',
+          bgcolor: "background.default", // Ensure drawer follows theme background
+          color: "text.primary", // Ensure text is visible
         },
       }}
     >
       <List>
-        {/* Home */}
-        <ListItemButton
-          selected={activeSection === 'Home'}
-          onClick={() => handleSectionClick('Home')}
-          sx={{
-            '&.Mui-selected': { backgroundColor: highlightColor }, // Highlight selected state
-          }}
-        >
-          <ListItemIcon>
-            <HomeIcon />
-          </ListItemIcon>
-          <ListItemText primary="Home" />
-        </ListItemButton>
-
-        {/* Dashboard */}
-        <ListItemButton
-          selected={activeSection === 'Dashboard'}
-          onClick={() => handleSectionClick('Dashboard')}
-          sx={{
-            '&.Mui-selected': { backgroundColor: highlightColor }, // Highlight selected state
-          }}
-        >
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItemButton>
-
-        {/* Manage Products */}
-        <ListItemButton
-          selected={activeSection === 'Manage Products'}
-          onClick={() => handleSectionClick('Manage Products')}
-          sx={{
-            '&.Mui-selected': { backgroundColor: highlightColor }, // Highlight selected state
-          }}
-        >
-          <ListItemIcon>
-            <InventoryIcon />
-          </ListItemIcon>
-          <ListItemText primary="Manage Products" />
-        </ListItemButton>
-
-      {/* Manage Banners */}
-      <ListItemButton
-          selected={activeSection === 'Manage Banners'}
-          onClick={() => handleSectionClick('Manage Banners')}
-          sx={{
-            '&.Mui-selected': { backgroundColor: highlightColor }, // Highlight selected state
-          }}
-        >
-          <ListItemIcon>
-            <InventoryIcon />
-          </ListItemIcon>
-          <ListItemText primary="Manage Banners" />
-        </ListItemButton>
-
-      {/* Manage Orders */}
-      <ListItemButton
-          selected={activeSection === 'Manage Orders'}
-          onClick={() => handleSectionClick('Manage Orders')}
-          sx={{
-            '&.Mui-selected': { backgroundColor: highlightColor }, // Highlight selected state
-          }}
-        >
-          <ListItemIcon>
-            <InventoryIcon />
-          </ListItemIcon>
-          <ListItemText primary="Manage Orders" />
-        </ListItemButton>
-
-
-      {/* Manage Brand Images*/}
-      <ListItemButton
-          selected={activeSection === 'Manage Brand Images'}
-          onClick={() => handleSectionClick('Manage Brand Images')}
-          sx={{
-            '&.Mui-selected': { backgroundColor: highlightColor }, // Highlight selected state
-          }}
-        >
-          <ListItemIcon>
-            <InventoryIcon />
-          </ListItemIcon>
-          <ListItemText primary="Manage Brand Images" />
-        </ListItemButton>
-
+        {/* Sidebar Items */}
+        {[
+          { label: "Home", icon: <HomeIcon /> },
+          { label: "Dashboard", icon: <DashboardIcon /> },
+          { label: "Manage Products", icon: <InventoryIcon /> },
+          { label: "Manage Banners", icon: <InventoryIcon /> },
+          { label: "Manage Orders", icon: <InventoryIcon /> },
+          { label: "Manage Brand Images", icon: <InventoryIcon /> },
+        ].map((item) => (
+          <ListItemButton
+            key={item.label}
+            selected={activeSection === item.label}
+            onClick={() => handleSectionClick(item.label)}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: theme.palette.mode === "dark" ? "#424242" : "#f0f0f0",
+                color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
+              },
+              '&.Mui-selected:hover': {
+                backgroundColor: theme.palette.mode === "dark" ? "#616161" : "#e0e0e0",
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: "inherit" }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} />
+          </ListItemButton>
+        ))}
       </List>
     </Drawer>
   );

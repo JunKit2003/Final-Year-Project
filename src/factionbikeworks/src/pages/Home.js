@@ -14,11 +14,14 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { useTheme } from '@mui/material/styles';
+
 
 function Home() {
   const [images, setImages] = useState([]);
   const [brands, setBrands] = useState([]);
   const [showAllBrands, setShowAllBrands] = useState(false);
+  const theme = useTheme(); // Get current theme mode
 
   useEffect(() => {
     // 1) Fetch Banner Images
@@ -114,7 +117,7 @@ function Home() {
       </Box>
 
       {/* Shop Items by Brands Section */}
-      <Box sx={{ padding: 4, backgroundColor: "#f9f9f9" }}>
+      <Box sx={{ padding: 4, bgcolor: "background.default" }}>
         <Typography variant="h4" align="center" gutterBottom>
           Shop by Brands
         </Typography>
@@ -167,17 +170,21 @@ function Home() {
 
       {/* Embedded Map Section */}
       <Box sx={{ width: "100%", margin: 0, padding: 0 }}>
-        <iframe
-          title="map"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3983.815222182998!2d101.62756258489375!3d3.1434261450361616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31cc495f03e40a99%3A0x50f6e08edd4ee8b8!2sFaction%20Bikeworks!5e0!3m2!1sen!2smy!4v1728336895257!5m2!1sen!2smy"
-          width="100%"
-          height="450"
-          style={{ border: 0 }}
-          allowFullScreen=""
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
-      </Box>
+  <iframe
+    title="map"
+    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3983.815222182998!2d101.62756258489375!3d3.1434261450361616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31cc495f03e40a99%3A0x50f6e08edd4ee8b8!2sFaction%20Bikeworks!5e0!3m2!1sen!2smy!4v1728336895257!5m2!1sen!2smy"
+    width="100%"
+    height="450"
+    style={{
+      border: 0,
+      filter: theme.palette.mode === "dark" ? "invert(1)" : "invert(0)", // Invert colors in dark mode
+      transition: "filter 0.3s ease-in-out",
+    }}
+    allowFullScreen=""
+    loading="lazy"
+    referrerPolicy="no-referrer-when-downgrade"
+  />
+</Box>
     </div>
   );
 }

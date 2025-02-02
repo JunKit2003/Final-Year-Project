@@ -128,9 +128,22 @@ const Cart = () => {
     return (
       <>
         <Header />
-        <Box textAlign="center" mt={4}>
-          <Typography variant="h5">Your cart is empty.</Typography>
-        </Box>
+        <Box 
+  sx={{ 
+    bgcolor: "background.default", 
+    color: "text.primary", 
+    minHeight: "100vh",  // Ensures full-page height
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center"
+  }}
+>
+  <Typography variant="h5">Your cart is empty.</Typography>
+</Box>
+
+
       </>
     );
   }
@@ -138,7 +151,17 @@ const Cart = () => {
   return (
     <div>
       <Header />
-      <Box sx={{ p: 4 }}>
+      <Box 
+      sx={{ 
+        p: 4, 
+        bgcolor: "background.default", 
+        color: "text.primary", 
+        minHeight: "100vh",  // Ensures full height
+        display: "flex", 
+        flexDirection: "column" 
+      }}
+>
+
         <Typography variant="h4" gutterBottom>
           My Cart
         </Typography>
@@ -160,8 +183,8 @@ const Cart = () => {
 
             return (
               <Grid item xs={12} md={6} key={item.id}>
-                <Paper elevation={3}>
-                  <Card>
+              <Paper elevation={3} sx={{ bgcolor: "background.paper" }}>
+                <Card sx={{ bgcolor: "background.paper" }}>
                     <CardContent>
                       <FormControlLabel
                         control={
