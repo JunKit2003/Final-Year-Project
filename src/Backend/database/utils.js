@@ -536,7 +536,7 @@ const addCartItemToDB = withDatabaseConnectivity(
 			},
 			{ transaction }
 		  );
-		  console.log(`Added new item to cart: ${productVariationId}, quantity: ${quantity}`);
+		 	 console.log(`Added new item to cart: ${productVariationId}, quantity: ${quantity}`);
 		}
   
 		await transaction.commit(); // Commit transaction

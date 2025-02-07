@@ -261,29 +261,8 @@ const AddEditProductForm = ({
                 multiline
                 rows={2}
               />
-              {/* Status Buttons */}
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant={
-                    variation.status === "Available" ? "contained" : "outlined"
-                  }
-                  color="success"
-                  onClick={() => handleVariationChange(index, "status", "Available")}
-                >
-                  Available
-                </Button>
-                <Button
-                  variant={
-                    variation.status === "Out of stock" ? "contained" : "outlined"
-                  }
-                  color="error"
-                  onClick={() => handleVariationChange(index, "status", "Out of stock")}
-                  sx={{ ml: 2 }}
-                >
-                  Out of stock
-                </Button>
+              
               </Box>
-            </Box>
           ))}
           <Button
             variant="outlined"

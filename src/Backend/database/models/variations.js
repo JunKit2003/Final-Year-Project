@@ -59,17 +59,6 @@ export default (sequelize, DataTypes) => {
           notEmpty: { msg: "Image folder path must not be empty!" },
         },
       },
-      status: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: "Available",
-        validate: {
-          isIn: {
-            args: [["Available", "Out of stock"]],
-            msg: "Status must be 'Available' or 'Out of stock'.",
-          },
-        },
-      },
     },
     {
       sequelize,
