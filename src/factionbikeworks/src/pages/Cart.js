@@ -95,57 +95,12 @@ const Cart = () => {
     }
   };
 
-  // Check stock before proceeding to checkout
-  const validateStockBeforeCheckout = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${sessionUser.id}`,
-        { withCredentials: true }
-      );
-      const updatedCart = response.data;
-
-      // Check if any selected item has quantity exceeding stock
-      let outOfStockItems = [];
-      updatedCart.forEach((item) => {
-        if (selectedItems.includes(item.id) && item.quantity > item.variation.stock) {
-          outOfStockItems.push({
-            name: item.variation.product?.name || "Unknown Product",
-            availableStock: item.variation.stock,
-          });
-        }
-      });
-
-      // If there are out-of-stock items, refresh cart and alert user
-      if (outOfStockItems.length > 0) {
-        setCartItems(updatedCart); // Refresh cart with latest stock data
-
-        let errorMessage = "Some items in your cart are no longer available in the requested quantity:\n";
-        outOfStockItems.forEach((item) => {
-          errorMessage += `- ${item.name}: Only ${item.availableStock} left in stock\n`;
-        });
-
-        alert(errorMessage);
-        return false; // Prevent checkout
-      }
-
-      return true; // Stock is sufficient, allow checkout
-    } catch (error) {
-      console.error("Error validating stock before checkout:", error);
-      alert("Could not verify stock. Please try again.");
-      return false;
-    }
-  };
-
-  // Proceed to checkout with stock validation
-  const handleCheckout = async () => {
+  // Proceed to checkout
+  const handleCheckout = () => {
     if (selectedItems.length === 0) {
       alert("Please select valid items to checkout.");
       return;
     }
-
-    const stockIsValid = await validateStockBeforeCheckout();
-    if (!stockIsValid) return;
-
     navigate(
       `/checkoutPage?selected=${encodeURIComponent(JSON.stringify(selectedItems))}`
     );
@@ -222,14 +177,55 @@ const Cart = () => {
                     opacity: isOutOfStock || exceedsStock ? 0.5 : 1,
                   }}
                 >
-                  <Card sx={{ bgcolor: isOutOfStock || exceedsStock ? "grey.300" : "background.paper" }}>
+                  <Card
+                    sx={{
+                      bgcolor: isOutOfStock || exceedsStock ? "grey.300" : "background.paper",
+                    }}
+                  >
                     <CardContent>
-                      <Typography variant="h6">{product.name || "Unnamed Product"}</Typography>
-                      <Typography variant="body1">Price: RM{variation.price}</Typography>
-                      <Typography variant="body2">Quantity: {item.quantity}</Typography>
-                      <Typography variant="body2" color={isOutOfStock || exceedsStock ? "error" : "textPrimary"}>
-                        {isOutOfStock ? "Out of Stock" : exceedsStock ? `Only ${variation.stock} available!` : "In Stock"}
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={selectedItems.includes(item.id)}
+                            onChange={() =>
+                              handleSelectItem(item.id, variation.stock, item.quantity)
+                            }
+                            disabled={isOutOfStock || exceedsStock}
+                          />
+                        }
+                        label="Select"
+                      />
+                      <Typography variant="h6">
+                        {product.name || "Unnamed Product"}
                       </Typography>
+                      <Typography variant="body1">
+                        Price: RM{variation.price}
+                      </Typography>
+                      <Typography variant="body2">
+                        Quantity: {item.quantity}
+                      </Typography>
+                      <Typography variant="body2">
+                        Variation: {variation.name || "N/A"}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color={isOutOfStock || exceedsStock ? "error" : "textPrimary"}
+                      >
+                        {isOutOfStock
+                          ? "Out of Stock"
+                          : exceedsStock
+                          ? `Only ${variation.stock} available!`
+                          : "In Stock"}
+                      </Typography>
+
+                      <Button
+                        variant="contained"
+                        color="error"
+                        sx={{ mt: 2 }}
+                        onClick={() => handleRemove(item.id)}
+                      >
+                        Remove
+                      </Button>
                     </CardContent>
                   </Card>
                 </Paper>
@@ -239,7 +235,12 @@ const Cart = () => {
         </Grid>
 
         <Box textAlign="center" mt={4}>
-          <Button variant="contained" color="primary" onClick={handleCheckout} disabled={selectedItems.length === 0}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleCheckout}
+            disabled={selectedItems.length === 0}
+          >
             Proceed to Checkout
           </Button>
         </Box>
