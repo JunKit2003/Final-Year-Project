@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   Box,
@@ -13,6 +13,7 @@ const PaymentSuccess = () => {
   const [message, setMessage] = useState("Verifying your payment...");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const hasFinalizedPayment = useRef(false); // ✅ Prevent duplicate calls
 
   useEffect(() => {
     // 1) Authenticate user to get sessionUser
@@ -35,6 +36,10 @@ const PaymentSuccess = () => {
     // Only proceed once we have the sessionUser
     if (!sessionUser || !sessionUser.id) return;
 
+    // ✅ Prevent duplicate API call
+    if (hasFinalizedPayment.current) return;
+    hasFinalizedPayment.current = true; // Mark as called
+
     // 2) Extract Stripe session ID from the URL
     const sessionId = new URLSearchParams(window.location.search).get("session_id");
 
@@ -51,7 +56,7 @@ const PaymentSuccess = () => {
           `${process.env.REACT_APP_BACKEND_HOST}/api/cart/markOrderPaidAndClearCart`,
           {
             session_id: sessionId,
-            user_id: sessionUser.id, // ← Use sessionUser.id
+            user_id: sessionUser.id,
           },
           { withCredentials: true }
         );
@@ -69,7 +74,7 @@ const PaymentSuccess = () => {
     };
 
     finalizePayment();
-  }, [sessionUser]);
+  }, [sessionUser]); // ✅ Dependencies unchanged
 
   return (
     <Box sx={{ p: 4 }}>
@@ -93,12 +98,7 @@ const PaymentSuccess = () => {
       </Paper>
 
       {!loading && (
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mt: 2 }}
-          href="/"
-        >
+        <Button variant="contained" color="primary" sx={{ mt: 2 }} href="/">
           Return to Home
         </Button>
       )}

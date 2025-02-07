@@ -186,9 +186,9 @@ function Catalog() {
                       <Typography variant="h6">
                         Starting from RM{minPrice}
                       </Typography>
-                      <Button variant="contained" sx={{ mt: 2 }}>
+                      {/* <Button variant="contained" sx={{ mt: 2 }}>
                         View Details  
-                      </Button>
+                      </Button> */}
                     </CardContent>
                   </Card>
                 </Link>

@@ -1,4 +1,3 @@
-//cart/markOrderPaidAndClearCart.js
 import Stripe from "stripe";
 import {
   pingDatabase,
@@ -7,6 +6,7 @@ import {
   DatabaseError,
 } from "../../database/utils.js";
 import { db } from "../../database/index.js";
+import { Op } from "sequelize"; // Import Op from Sequelize
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -60,24 +60,53 @@ export default async function markOrderPaidAndClearCart(req, res) {
     // 7) Update the order status to "Paid"
     await order.update({ status: "Paid" }, { transaction });
 
-    // 8) Clear only the selected items from the user's cart
-    const selectedVariationIds = order.items.map((item) => item.variationId);
+    // 8) Aggregate quantity per variation (to avoid double subtraction)
+    const variationQuantities = {};
+    for (const item of order.items) {
+      if (!variationQuantities[item.variationId]) {
+        variationQuantities[item.variationId] = 0;
+      }
+      variationQuantities[item.variationId] += item.quantity;
+    }
+
+    // 9) Reduce stock for purchased variations
+    for (const [variationId, totalQuantity] of Object.entries(variationQuantities)) {
+      const variation = await db.Variations.findOne({
+        where: { id: variationId },
+        transaction,
+        lock: transaction.LOCK.UPDATE, // Lock row to prevent race conditions
+      });
+
+      if (variation) {
+        const newStock = Math.max(0, variation.stock - totalQuantity); // Prevent negative stock
+        await variation.update({ stock: newStock }, { transaction });
+        console.log(`Stock updated for variation ${variationId}: New stock = ${newStock}`);
+      } else {
+        console.warn(`Variation ${variationId} not found!`);
+      }
+    }
+
+    // 10) Clear only the selected items from the user's cart
+    const selectedVariationIds = Object.keys(variationQuantities);
 
     await db.Cart.destroy({
       where: {
         accountId: user_id,
-        variationId: selectedVariationIds, // ← ONLY remove the purchased items
+        variationId: { [Op.in]: selectedVariationIds }, // Ensure deletion of only purchased items
       },
       transaction,
     });
 
-    // 9) Commit the transaction if everything succeeds
+    console.log("Cleared cart items:", selectedVariationIds);
+
+    // 11) Commit the transaction if everything succeeds
     await transaction.commit();
 
-    // 10) Return success response
+    // 12) Return success response
     return res.status(200).json({
-      message: "Order marked as Paid and selected cart items cleared successfully.",
+      message: "Order marked as Paid, stock updated, and cart items cleared successfully.",
     });
+
   } catch (error) {
     // Roll back any changes on error
     await transaction.rollback();
@@ -90,7 +119,7 @@ export default async function markOrderPaidAndClearCart(req, res) {
     } else if (error instanceof DatabaseError) {
       return res.status(500).json({ message: error.message });
     } else {
-      console.error("Error marking order Paid and clearing cart:", error);
+      console.error("Error marking order Paid and updating stock:", error);
       return res.status(500).json({ message: "Internal server error", error });
     }
   }

@@ -501,6 +501,8 @@ const getUserByUsernameOrEmail = withDatabaseConnectivity(async (usernameOrEmail
 
 const addCartItemToDB = withDatabaseConnectivity(
 	async (userId, productVariationId, quantity) => {
+	  const transaction = await db.sequelize.transaction(); // Start transaction
+  
 	  try {
 		if (!userId || !productVariationId || !quantity) {
 		  throw new InputValidationError(
@@ -508,16 +510,38 @@ const addCartItemToDB = withDatabaseConnectivity(
 		  );
 		}
   
-		const [cartItem, created] = await db.Cart.findOrCreate({
+		// Lock the row to prevent race conditions
+		const cartItem = await db.Cart.findOne({
 		  where: { accountId: userId, variationId: productVariationId },
-		  defaults: { quantity },
+		  transaction, // Include transaction
+		  lock: transaction.LOCK.UPDATE, // Lock row for update
 		});
   
-		if (!created) {
-		  cartItem.quantity += Number(quantity);
-		  await cartItem.save();
+		if (cartItem) {
+		  // If item exists, increment quantity
+		  await cartItem.update(
+			{ quantity: cartItem.quantity + Number(quantity) },
+			{ transaction }
+		  );
+		  console.log(
+			`Updated cart item: ${productVariationId}, new quantity: ${cartItem.quantity + Number(quantity)}`
+		  );
+		} else {
+		  // If item doesn't exist, create a new entry
+		  await db.Cart.create(
+			{
+			  accountId: userId,
+			  variationId: productVariationId,
+			  quantity: Number(quantity),
+			},
+			{ transaction }
+		  );
+		  console.log(`Added new item to cart: ${productVariationId}, quantity: ${quantity}`);
 		}
+  
+		await transaction.commit(); // Commit transaction
 	  } catch (error) {
+		await transaction.rollback(); // Rollback on failure
 		if (error instanceof db.Sequelize.ValidationError) {
 		  throw new InputValidationError(
 			"Invalid input: " + error.errors.map((e) => e.message).join(", ")
@@ -528,6 +552,8 @@ const addCartItemToDB = withDatabaseConnectivity(
 	  }
 	}
   );
+  
+  
   
   
   /**

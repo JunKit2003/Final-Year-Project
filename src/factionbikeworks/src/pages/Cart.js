@@ -15,14 +15,13 @@ import {
 } from "@mui/material";
 
 const Cart = () => {
-  const [sessionUser, setSessionUser] = useState(null);  // ← Store authenticated user
+  const [sessionUser, setSessionUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
 
   const navigate = useNavigate();
 
-  // 1) Fetch the user from /api/account/authenticate (POST)
   useEffect(() => {
     const authenticateUser = async () => {
       try {
@@ -40,7 +39,6 @@ const Cart = () => {
     authenticateUser();
   }, []);
 
-  // 2) Once we have the user, fetch their cart
   useEffect(() => {
     if (!sessionUser || !sessionUser.id) return;
 
@@ -60,7 +58,8 @@ const Cart = () => {
   }, [sessionUser]);
 
   // Handle selecting/deselecting an individual item
-  const handleSelectItem = (itemId) => {
+  const handleSelectItem = (itemId, stock, quantity) => {
+    if (stock === 0 || quantity > stock) return; // Prevent selecting invalid items
     setSelectedItems((prev) =>
       prev.includes(itemId)
         ? prev.filter((id) => id !== itemId)
@@ -68,12 +67,15 @@ const Cart = () => {
     );
   };
 
-  // Handle "Select All" toggle
+  // Handle "Select All" toggle (excluding invalid items)
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(cartItems.map((item) => item.id));
+      const availableItems = cartItems
+        .filter((item) => item.variation?.stock > 0 && item.quantity <= item.variation?.stock)
+        .map((item) => item.id);
+      setSelectedItems(availableItems);
     }
     setSelectAll(!selectAll);
   };
@@ -93,25 +95,62 @@ const Cart = () => {
     }
   };
 
-  // Proceed to checkout without using localStorage
-  const handleCheckout = () => {
+  // Check stock before proceeding to checkout
+  const validateStockBeforeCheckout = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${sessionUser.id}`,
+        { withCredentials: true }
+      );
+      const updatedCart = response.data;
+
+      // Check if any selected item has quantity exceeding stock
+      let outOfStockItems = [];
+      updatedCart.forEach((item) => {
+        if (selectedItems.includes(item.id) && item.quantity > item.variation.stock) {
+          outOfStockItems.push({
+            name: item.variation.product?.name || "Unknown Product",
+            availableStock: item.variation.stock,
+          });
+        }
+      });
+
+      // If there are out-of-stock items, refresh cart and alert user
+      if (outOfStockItems.length > 0) {
+        setCartItems(updatedCart); // Refresh cart with latest stock data
+
+        let errorMessage = "Some items in your cart are no longer available in the requested quantity:\n";
+        outOfStockItems.forEach((item) => {
+          errorMessage += `- ${item.name}: Only ${item.availableStock} left in stock\n`;
+        });
+
+        alert(errorMessage);
+        return false; // Prevent checkout
+      }
+
+      return true; // Stock is sufficient, allow checkout
+    } catch (error) {
+      console.error("Error validating stock before checkout:", error);
+      alert("Could not verify stock. Please try again.");
+      return false;
+    }
+  };
+
+  // Proceed to checkout with stock validation
+  const handleCheckout = async () => {
     if (selectedItems.length === 0) {
-      alert("Please select items to checkout.");
+      alert("Please select valid items to checkout.");
       return;
     }
 
-    // Option 1: Pass selectedItems in a URL param
-    // navigate(`/checkoutPage?selectedItems=${encodeURIComponent(JSON.stringify(selectedItems))}`);
+    const stockIsValid = await validateStockBeforeCheckout();
+    if (!stockIsValid) return;
 
-    // Option 2: Use a global state management (Redux/Context) to store selectedItems
-
-    // For now, we'll use a simple param approach:
     navigate(
       `/checkoutPage?selected=${encodeURIComponent(JSON.stringify(selectedItems))}`
     );
   };
 
-  // If user not yet authenticated or cart not fetched, optionally show a loading message
   if (!sessionUser) {
     return (
       <>
@@ -123,27 +162,24 @@ const Cart = () => {
     );
   }
 
-  // If the cart is empty, show a message
   if (!cartItems || cartItems.length === 0) {
     return (
       <>
         <Header />
-        <Box 
-  sx={{ 
-    bgcolor: "background.default", 
-    color: "text.primary", 
-    minHeight: "100vh",  // Ensures full-page height
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center"
-  }}
->
-  <Typography variant="h5">Your cart is empty.</Typography>
-</Box>
-
-
+        <Box
+          sx={{
+            bgcolor: "background.default",
+            color: "text.primary",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="h5">Your cart is empty.</Typography>
+        </Box>
       </>
     );
   }
@@ -151,28 +187,22 @@ const Cart = () => {
   return (
     <div>
       <Header />
-      <Box 
-      sx={{ 
-        p: 4, 
-        bgcolor: "background.default", 
-        color: "text.primary", 
-        minHeight: "100vh",  // Ensures full height
-        display: "flex", 
-        flexDirection: "column" 
-      }}
->
-
+      <Box
+        sx={{
+          p: 4,
+          bgcolor: "background.default",
+          color: "text.primary",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Typography variant="h4" gutterBottom>
           My Cart
         </Typography>
 
         <FormControlLabel
-          control={
-            <Checkbox
-              checked={selectAll}
-              onChange={handleSelectAll}
-            />
-          }
+          control={<Checkbox checked={selectAll} onChange={handleSelectAll} />}
           label="Select All"
         />
 
@@ -180,42 +210,26 @@ const Cart = () => {
           {cartItems.map((item) => {
             const variation = item.variation || {};
             const product = variation.product || {};
+            const isOutOfStock = variation.stock === 0;
+            const exceedsStock = item.quantity > variation.stock;
 
             return (
               <Grid item xs={12} md={6} key={item.id}>
-              <Paper elevation={3} sx={{ bgcolor: "background.paper" }}>
-                <Card sx={{ bgcolor: "background.paper" }}>
+                <Paper
+                  elevation={3}
+                  sx={{
+                    bgcolor: isOutOfStock || exceedsStock ? "grey.300" : "background.paper",
+                    opacity: isOutOfStock || exceedsStock ? 0.5 : 1,
+                  }}
+                >
+                  <Card sx={{ bgcolor: isOutOfStock || exceedsStock ? "grey.300" : "background.paper" }}>
                     <CardContent>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={selectedItems.includes(item.id)}
-                            onChange={() => handleSelectItem(item.id)}
-                          />
-                        }
-                        label="Select"
-                      />
-                      <Typography variant="h6">
-                        {product.name || "Unnamed Product"}
+                      <Typography variant="h6">{product.name || "Unnamed Product"}</Typography>
+                      <Typography variant="body1">Price: RM{variation.price}</Typography>
+                      <Typography variant="body2">Quantity: {item.quantity}</Typography>
+                      <Typography variant="body2" color={isOutOfStock || exceedsStock ? "error" : "textPrimary"}>
+                        {isOutOfStock ? "Out of Stock" : exceedsStock ? `Only ${variation.stock} available!` : "In Stock"}
                       </Typography>
-                      <Typography variant="body1">
-                        Price: RM{variation.price}
-                      </Typography>
-                      <Typography variant="body2">
-                        Quantity: {item.quantity}
-                      </Typography>
-                      <Typography variant="body2">
-                        Variation: {variation.name || "N/A"}
-                      </Typography>
-
-                      <Button
-                        variant="contained"
-                        color="error"
-                        sx={{ mt: 2 }}
-                        onClick={() => handleRemove(item.id)}
-                      >
-                        Remove
-                      </Button>
                     </CardContent>
                   </Card>
                 </Paper>
@@ -225,12 +239,7 @@ const Cart = () => {
         </Grid>
 
         <Box textAlign="center" mt={4}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCheckout}
-            disabled={selectedItems.length === 0}
-          >
+          <Button variant="contained" color="primary" onClick={handleCheckout} disabled={selectedItems.length === 0}>
             Proceed to Checkout
           </Button>
         </Box>
