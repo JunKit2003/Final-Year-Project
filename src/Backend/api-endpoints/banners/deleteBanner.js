@@ -29,7 +29,7 @@ export default async function deleteBanner(req, res) {
 
         // Step 3: Attempt to delete the image file from the filesystem
         await unlink(imagePath);
-        console.log(`Banner image file deleted: ${imagePath}`);
+        //console.log(`Banner image file deleted: ${imagePath}`);
 
         // Step 4: After deleting the file, delete the database entry
         await deleteBannerFromDB(id); // Now safe to delete the entry

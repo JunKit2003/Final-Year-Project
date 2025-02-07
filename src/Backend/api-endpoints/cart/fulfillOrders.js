@@ -23,7 +23,7 @@ export default async function fulfillOrder(req, res) {
           return res.status(403).json({ message: "Forbidden: Admin access required" });
       }
 
-      console.log(`Admin ${req.session.user.username} is fulfilling order ${req.params.orderId}`);
+      //console.log(`Admin ${req.session.user.username} is fulfilling order ${req.params.orderId}`);
 
       // 2) Ping the database
       await pingDatabase();

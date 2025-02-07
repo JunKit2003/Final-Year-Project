@@ -11,7 +11,7 @@ import {
     try {
       await pingDatabase();
   
-      console.log("Request Body:", req.body);
+      //console.log("Request Body:", req.body);
   
       // Destructure with the correct variable names
       const { user_id, variation_id, quantity } = req.body;

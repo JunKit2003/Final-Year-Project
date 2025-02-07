@@ -16,7 +16,7 @@ import {
 	  const { id } = req.params;
 	  let productDetails = req.body;
   
-	  console.log("Received product details:", productDetails);
+	  //console.log("Received product details:", productDetails);
   
 	  // Parse variations if it's a string
 	  let variations = productDetails.variations;

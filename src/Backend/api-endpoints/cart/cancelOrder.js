@@ -11,7 +11,7 @@ import { db } from "../../database/index.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function cancelOrder(req, res) {
-    console.log(">>>> Inside cancelOrder controller, request body:", req.body);
+    //console.log(">>>> Inside cancelOrder controller, request body:", req.body);
   const transaction = await db.sequelize.transaction();
 
   try {
