@@ -1,8 +1,8 @@
-// Sequalize model for the accounts table
-
 import bcrypt from 'bcrypt';
 import { snakeCaseToNormalCase } from '../../utils.js';
 import { ValidationError } from 'sequelize';
+
+const saltRounds = 10; // Define your salt rounds
 
 export default (sequelize, DataTypes) => {
   const Account = sequelize.define('Account', {
@@ -30,7 +30,9 @@ export default (sequelize, DataTypes) => {
         notEmpty: { msg: "First name must not be empty!" },
         isValidName(value) {
           if (value.length < 2 || !/^[a-zA-Z.]+(?: [a-zA-Z.]+)*$/.test(value)) {
-            throw new Error("First name must be at least 2 characters long and only contain letters and periods.");
+            throw new Error(
+              "First name must be at least 2 characters and only contain letters/periods."
+            );
           }
         },
       },
@@ -42,7 +44,9 @@ export default (sequelize, DataTypes) => {
         notEmpty: { msg: "Last name must not be empty!" },
         isValidName(value) {
           if (value.length < 2 || !/^[a-zA-Z.]+(?: [a-zA-Z.]+)*$/.test(value)) {
-            throw new Error("Last name must be at least 2 characters long and only contain letters and periods.");
+            throw new Error(
+              "Last name must be at least 2 characters and only contain letters/periods."
+            );
           }
         },
       },
@@ -77,50 +81,44 @@ export default (sequelize, DataTypes) => {
     },
     phone_number: {
       type: DataTypes.STRING(15),
-      allowNull: true, // Optional, set `false` if mandatory
+      allowNull: true,
       validate: {
         isValidPhoneNumber(value) {
           if (value && !/^\+?\d{10,15}$/.test(value)) {
-            throw new Error("Phone number must be valid (10-15 digits, optional + prefix).");
+            throw new Error(
+              "Phone number must be valid (10-15 digits, optional +)."
+            );
           }
         },
       },
     },
     password: {
-      type: DataTypes.TEXT('long'),
+      type: DataTypes.STRING(255), // Changed from TEXT to VARCHAR(255)
       allowNull: false,
       validate: {
         notEmpty: { msg: "Password must not be empty!" },
         isValidPassword(value) {
-          // Check length
           if (value.length < 6) {
             throw new Error("Password must be at least 6 characters long!");
           }
-        
-          // Check for at least one uppercase letter
           if (!/[A-Z]/.test(value)) {
             throw new Error("Password must contain at least one uppercase letter!");
           }
-        
-          // Check for at least one lowercase letter
           if (!/[a-z]/.test(value)) {
             throw new Error("Password must contain at least one lowercase letter!");
           }
-        
-          // Check for at least one digit
           if (!/[0-9]/.test(value)) {
             throw new Error("Password must contain at least one number!");
           }
-        
-          // Check for at least one special character
           if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
             throw new Error("Password must contain at least one special character!");
           }
         },
       },
     },
+    // Use STRING(64) or bigger for hex tokens
     password_reset_token: {
-      type: DataTypes.UUID,
+      type: DataTypes.STRING(64),
       allowNull: true,
     },
     password_reset_token_expiration: {
@@ -134,28 +132,22 @@ export default (sequelize, DataTypes) => {
   });
 
   Account.beforeUpdate(async (account, options) => {
-    for (const key of options.fields) {
-      const oldValue = account.previous(key);
-      const newValue = account.getDataValue(key);
-      
-        if (key === 'password') {
-          // Check if the new plaintext password is the same as the old hashed password
-          const passwordIsUnchanged = await bcrypt.compare(newValue, oldValue);
-          if (passwordIsUnchanged) {
-            throw new ValidationError('New password must be different from the old password!', [
-              { message: 'New password must be different from the old password!' }
-            ]);
-            
-          }
-
-        // Hash the password before saving
-        account.password = await bcrypt.hash(newValue, saltRounds);
+    if (options.fields.includes('password')) {
+      const oldPasswordHash = account.previous('password'); // Old hashed password
+      const newPassword = account.getDataValue('password'); // Already hashed!
+  
+      // Ensure new password is different from old password
+      const passwordIsUnchanged = await bcrypt.compare(newPassword, oldPasswordHash);
+      if (passwordIsUnchanged) {
+        throw new ValidationError(
+          'New password must be different from the old password!',
+          [{ message: 'New password must be different from the old password!' }]
+        );
       }
-      
-      else if (newValue === oldValue) {
-          throw new ValidationError(`${key} is unchanged!`, [{message: `${snakeCaseToNormalCase(key)} is unchanged!`}]);
-        }
+  
+      // ✅ Do not rehash the password, as it's already hashed in signup/resetPassword.js
     }
   });
+
   return Account;
 };

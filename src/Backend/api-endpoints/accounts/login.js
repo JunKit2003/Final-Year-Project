@@ -26,6 +26,10 @@ export default async function login(req, res) {
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
+        console.log("Login - Stored Hashed Password:", user.password);
+        console.log("Login - Plaintext Password:", password);
+        console.log("Login - Comparison Result:", await bcrypt.compare(password, user.password));
+
 
         if (!isPasswordValid) {
             throw new InputValidationError("Invalid email/username or password.");
