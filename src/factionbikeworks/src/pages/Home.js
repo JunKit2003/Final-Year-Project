@@ -16,12 +16,11 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { useTheme } from '@mui/material/styles';
 
-
 function Home() {
   const [images, setImages] = useState([]);
   const [brands, setBrands] = useState([]);
   const [showAllBrands, setShowAllBrands] = useState(false);
-  const theme = useTheme(); // Get current theme mode
+  const theme = useTheme();
 
   useEffect(() => {
     // 1) Fetch Banner Images
@@ -63,7 +62,6 @@ function Home() {
             withCredentials: true,
           }
         );
-
         const data = response.data;
         console.log("Fetched brand images:", data.brands);
         setBrands(data.brands);
@@ -76,8 +74,8 @@ function Home() {
     fetchBrandImages();
   }, []);
 
-  // Carousel settings
-  const settings = {
+  // Banner Carousel settings
+  const bannerSettings = {
     dots: true,
     infinite: true,
     speed: 500,
@@ -87,8 +85,36 @@ function Home() {
     autoplaySpeed: 3000,
   };
 
-  // Show all or first 5 brands
-  const displayedBrands = showAllBrands ? brands : brands.slice(0, 3);
+  // === Utility: chunk array into groups of "size" ===
+  const chunkArray = (arr, size) => {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+  };
+
+  // === Brand Carousel Settings (6 items per slide) ===
+  const brandSliderSettings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 1,  // We show 1 "slide" at a time, but each "slide" has 6 items in a 2x3 grid
+    slidesToScroll: 1,
+    // Adjust or add responsive settings if needed:
+    // responsive: [
+    //   {
+    //     breakpoint: 1200,
+    //     settings: {
+    //       slidesToShow: 1,
+    //       slidesToScroll: 1,
+    //     },
+    //   },
+    // ],
+  };
+
+  // Chunk the brands into groups of 6 for the carousel
+  const brandChunks = chunkArray(brands, 6);
 
   return (
     <div style={{ margin: 0, padding: 0 }}>
@@ -96,7 +122,7 @@ function Home() {
 
       {/* Advertisement Carousel Section */}
       <Box sx={{ width: "100%", margin: 0, padding: 0, backgroundColor: "black" }}>
-        <Slider {...settings}>
+        <Slider {...bannerSettings}>
           {images.map((image, index) => (
             <div key={index}>
               <img
@@ -116,75 +142,125 @@ function Home() {
         </Slider>
       </Box>
 
-      {/* Shop Items by Brands Section */}
+      {/* Shop by Brands Section */}
       <Box sx={{ padding: 4, bgcolor: "background.default" }}>
         <Typography variant="h4" align="center" gutterBottom>
           Shop by Brands
         </Typography>
 
-        <Grid container spacing={4}>
-          {displayedBrands.map((brand, index) => {
-            const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
-            return (
-              <Grid item xs={12} sm={6} md={4} key={brand.id || index}>
-                {/* 
-                  Link to /catalog/brandName 
-                  So that when clicked, user is redirected to brand filter 
-                */}
-                <Link
-                  to={`/catalog/${brand.brandName}`} 
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
-                  <Card>
-                    {/* Brand Image */}
-                    {brand.imageUrl && (
-                      <CardMedia
-                        component="img"
-                        height="200"
-                        image={fullImageUrl}
-                        alt={brand.brandName}
-                        style={{ objectFit: "contain" }}
-                      />
-                    )}
-                    <CardContent sx={{ textAlign: "center" }}>
-                      <Typography variant="h5" component="div">
-                        {brand.brandName}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </Grid>
-            );
-          })}
-        </Grid>
+        {!showAllBrands && (
+          <>
+            {/* Show first 3 brands (collapsed view) */}
+            <Grid container spacing={4}>
+              {brands.slice(0, 3).map((brand, index) => {
+                const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={brand.id || index}>
+                    <Link
+                      to={`/catalog/${brand.brandName}`}
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                      <Card>
+                        {brand.imageUrl && (
+                          <CardMedia
+                            component="img"
+                            height="200"
+                            image={fullImageUrl}
+                            alt={brand.brandName}
+                            style={{ objectFit: "contain" }}
+                          />
+                        )}
+                        <CardContent sx={{ textAlign: "center" }}>
+                          <Typography variant="h5" component="div">
+                            {brand.brandName}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </Grid>
+                );
+              })}
+            </Grid>
 
-        {/* Show More Button */}
-        {!showAllBrands && brands.length > 3 && (
-          <Box sx={{ textAlign: "center", marginTop: 2 }}>
-            <Button variant="contained" onClick={() => setShowAllBrands(true)}>
-              Show More
-            </Button>
-          </Box>
+            {/* Show More Button (only if more than 3 brands exist) */}
+            {brands.length > 3 && (
+              <Box sx={{ textAlign: "center", marginTop: 2 }}>
+                <Button variant="contained" onClick={() => setShowAllBrands(true)}>
+                  Show More
+                </Button>
+              </Box>
+            )}
+          </>
+        )}
+
+        {showAllBrands && (
+          <>
+            {/* Show carousel with 6 items at a time in 2 rows × 3 columns */}
+            <Slider {...brandSliderSettings}>
+              {brandChunks.map((chunk, i) => (
+                <div key={i}>
+                  <Grid container spacing={4} sx={{ padding: 2 }}>
+                    {chunk.map((brand, index) => {
+                      const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
+                      return (
+                        <Grid item xs={12} sm={6} md={4} key={brand.id || index}>
+                          <Link
+                            to={`/catalog/${brand.brandName}`}
+                            style={{ textDecoration: "none", color: "inherit" }}
+                          >
+                            <Card>
+                              {brand.imageUrl && (
+                                <CardMedia
+                                  component="img"
+                                  height="200"
+                                  image={fullImageUrl}
+                                  alt={brand.brandName}
+                                  style={{ objectFit: "contain" }}
+                                />
+                              )}
+                              <CardContent sx={{ textAlign: "center" }}>
+                                <Typography variant="h5" component="div">
+                                  {brand.brandName}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Link>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
+                </div>
+              ))}
+            </Slider>
+
+            {/* Show Less Button */}
+            <Box sx={{ textAlign: "center", marginTop: 2 }}>
+              <Button variant="contained" onClick={() => setShowAllBrands(false)}>
+                Show Less
+              </Button>
+            </Box>
+          </>
         )}
       </Box>
 
       {/* Embedded Map Section */}
       <Box sx={{ width: "100%", margin: 0, padding: 0 }}>
-  <iframe
-    title="map"
-    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3983.815222182998!2d101.62756258489375!3d3.1434261450361616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31cc495f03e40a99%3A0x50f6e08edd4ee8b8!2sFaction%20Bikeworks!5e0!3m2!1sen!2smy!4v1728336895257!5m2!1sen!2smy"
-    width="100%"
-    height="450"
-    style={{
-      border: 0,
-      filter: theme.palette.mode === "dark" ? "invert(1)" : "invert(0)", // Invert colors in dark mode
-      transition: "filter 0.3s ease-in-out",
-    }}
-    allowFullScreen=""
-    loading="lazy"
-    referrerPolicy="no-referrer-when-downgrade"
-  />
-</Box>
+        <iframe
+          title="map"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3983.815222182998!2d101.62756258489375!3d3.1434261450361616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31cc495f03e40a99%3A0x50f6e08edd4ee8b8!2sFaction%20Bikeworks!5e0!3m2!1sen!2smy!4v1728336895257!5m2!1sen!2smy"
+          width="100%"
+          height="450"
+          style={{
+            border: 0,
+            // Invert in dark mode
+            filter: theme.palette.mode === "dark" ? "invert(1)" : "invert(0)",
+            transition: "filter 0.3s ease-in-out",
+          }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </Box>
     </div>
   );
 }

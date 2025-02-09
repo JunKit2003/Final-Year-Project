@@ -9,13 +9,13 @@ const initializeDatabase = async () => {
 				{
 					id: 1,
 					category: "Admin",
-					first_name: "Jun Kit",
-					last_name: "Chee",
-					username: "Cjk@2003",
-					email: "cjk@gmail.com",
-					phone_number: "0172335460",
+					first_name: "Kevin",
+					last_name: "Lee",
+					username: "factionadmin",
+					email: "factionbikeworks@faction.com",
+					phone_number: "01133321767",
 					password:
-						"$2a$12$d9Z8XOEQ8pv6gJvp0Mvlyu139DvYFE49ItQ817K67MFwOOtabKI1a", // abcd1234
+						"$2a$10$xitLFMrWUHnBhjU1pyZXcOWmsND2rGM/XuQnHI6IA9C4Ggdp8WHTi", //faction$$$$$
 				},
 			]);
 		}

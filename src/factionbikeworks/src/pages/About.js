@@ -65,7 +65,7 @@ function About () {
                 </Grid>
                 <Grid item xs={12}>
                     <Typography variant="body1">
-                    <strong>Contact Number:</strong> +60xxxxxxxxx
+                    <strong>Contact Number:</strong> +6011-3332 1767
                     </Typography>
                 </Grid>
                 <Grid item xs={12}>
