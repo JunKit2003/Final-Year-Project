@@ -57,13 +57,13 @@ export default async function resetPassword(req, res) {
       throw new InputValidationError("Password must be at least 6 characters.");
     }
     // 7. Validate and hash new password
-    console.log("Reset Password - Plaintext Password:", newPassword);
+    // console.log("Reset Password - Plaintext Password:", newPassword);
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    console.log("Reset Password - Hashed Password:", hashedPassword);
+    // console.log("Reset Password - Hashed Password:", hashedPassword);
 
     // 8. Update user password and clear token
     user.password = hashedPassword;
-    console.log("Stored in DB :", user.password)
+    // console.log("Stored in DB :", user.password)
     user.password_reset_token = null;
     user.password_reset_token_expiration = null;
     await user.save();

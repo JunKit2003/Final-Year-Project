@@ -1,6 +1,6 @@
 export default async function authenticate(req, res) {
     try {
-        console.log("Session Data:", req.session); // Debug session data
+        // console.log("Session Data:", req.session); // Debug session data
 
         if (!req.session.user) {
             return res.status(401).send({ message: 'User not logged in' }); // 401 Unauthorized
@@ -8,7 +8,7 @@ export default async function authenticate(req, res) {
 
         const { category } = req.session.user;
 
-        console.log("User Category:", category); // Debug category
+        // console.log("User Category:", category); // Debug category
 
         const roles = {
             Admin: 'Admin user logged in',

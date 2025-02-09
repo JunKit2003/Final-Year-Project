@@ -64,9 +64,9 @@ export default async function signup(req, res) {
     }
 
     // 5. Hash the password
-    console.log("Signup - Plaintext Password:", password);
+    // console.log("Signup - Plaintext Password:", password);
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("Signup - Hashed Password:", hashedPassword);
+    // console.log("Signup - Hashed Password:", hashedPassword);
 
     // 6. Create new user in DB
     const newUser = await db.Account.create({ 

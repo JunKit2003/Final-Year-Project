@@ -138,7 +138,7 @@ const ViewProduct = () => {
                       <div key={index}>
                         <img
                           src={image}
-                          alt={`Variation ${selectedVariation.sku} - Image ${index + 1}`}
+                          alt={`Variation ${selectedVariation.sku} - ${index + 1}`}
                           style={{ width: "100%", height: "400px", objectFit: "contain" }}
                         />
                       </div>
@@ -148,7 +148,7 @@ const ViewProduct = () => {
                   <div>
                     <img
                       src={variationImages[0]}
-                      alt={`Variation ${selectedVariation.sku} - Single Image`}
+                      alt={`Variation ${selectedVariation.sku}`}
                       style={{ width: "100%", height: "400px", objectFit: "contain" }}
                     />
                   </div>

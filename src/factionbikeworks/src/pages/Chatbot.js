@@ -20,6 +20,7 @@ const Chatbot = () => {
       <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
         <iframe
           src="https://cdn.botpress.cloud/webchat/v2.2/shareable.html?configUrl=https://files.bpcontent.cloud/2025/02/02/18/20250202183140-YKDEBF3S.json"
+          title="Chat Bot"
           width="100%"
           height="600px"
           style={{

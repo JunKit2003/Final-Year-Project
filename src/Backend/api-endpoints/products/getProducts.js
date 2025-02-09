@@ -24,7 +24,7 @@ export default async function getProducts(req, res) {
 
       // Attach images to the product's variations
       const productWithImages = await attachImagesToProduct(product);
-      console.log("Product with Images:", productWithImages);
+      // console.log("Product with Images:", productWithImages);
 
       res.status(200).send({
         message: "Product retrieved successfully!",
@@ -39,7 +39,7 @@ export default async function getProducts(req, res) {
         products.map(async (product) => await attachImagesToProduct(product))
       );
 
-      console.log("Products with Images:", productsWithImages);
+      // console.log("Products with Images:", productsWithImages);
 
       res.status(200).send({
         message: "Products retrieved successfully!",
@@ -62,7 +62,7 @@ export default async function getProducts(req, res) {
 async function attachImagesToProduct(product) {
   // Ensure variations are included
   if (!product.variations || product.variations.length === 0) {
-    console.log("No variations found for product:", product);
+    // console.log("No variations found for product:", product);
     return product;
   }
 
@@ -73,16 +73,16 @@ async function attachImagesToProduct(product) {
 
   // Get images data for the product's variations
   const imagesData = await getImageUrlDataForProduct(productId, skus);
-  console.log("Retrieved Images Data:", imagesData);
+  // console.log("Retrieved Images Data:", imagesData);
 
   // Attach images to each variation
   product.variations = product.variations.map((variation) => {
     const sku = variation.sku;
     variation.images = imagesData[sku] || { files: [], names: [] };
-    console.log(`Attached Images to SKU ${sku}:`, variation.images);
+    // console.log(`Attached Images to SKU ${sku}:`, variation.images);
     return variation;
   });
 
-  console.log("Final Product with Variations and Images:", product);
+  // console.log("Final Product with Variations and Images:", product);
   return product;
 }

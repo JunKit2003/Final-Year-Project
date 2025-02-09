@@ -5,7 +5,7 @@ async function getImageUrlDataForProduct(productId, skus) {
 	const imagesData = {};
   
 	const baseImageUrl = `${process.env.HOST}:${process.env.PORT_SERVER}/images/product_images/${productId}`;
-	console.log(baseImageUrl);
+	// console.log(baseImageUrl);
   
 	for (const sku of skus) {
 	  const skuFolderPath = path.join(
@@ -14,10 +14,10 @@ async function getImageUrlDataForProduct(productId, skus) {
 		productId.toString(),
 		sku
 	  );
-	  console.log(skuFolderPath);
+	//   console.log(skuFolderPath);
   
 	  if (fs.existsSync(skuFolderPath)) {
-		console.log("exist");
+		// console.log("exist");
 		const files = fs.readdirSync(skuFolderPath);
   
 		imagesData[sku] = {
@@ -32,7 +32,7 @@ async function getImageUrlDataForProduct(productId, skus) {
 		};
 	  }
 	}
-	console.log("Constructed imagesData:", imagesData);
+	// console.log("Constructed imagesData:", imagesData);
 	return imagesData;
   }
   

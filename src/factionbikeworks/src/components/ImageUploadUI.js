@@ -20,14 +20,52 @@ const ImageUploadUI = ({
 	const [selectedVariations, setSelectedVariations] = useState([]);
 	const [images, setImages] = useState({});
 
+	 // Function to convert URL to File object
+	const urlToFile = async (url, fileName) => {
+		try {
+		  const response = await fetch(url);
+		  const blob = await response.blob();
+		  return new File([blob], fileName, { type: blob.type });
+		} catch (error) {
+		  console.error(`Error converting URL to File:`, error);
+		  return null;
+		}
+	};
+
 	// Load existing images on component mount or when existingImagesData changes
 	useEffect(() => {
-		console.log("Received existingImagesData in ImageUploadUI:", existingImagesData);
-		if (Object.keys(existingImagesData).length > 0) {
-			setImages(existingImagesData);
-			setSelectedVariations(Object.keys(existingImagesData));
-		}
-	}, [existingImagesData]);
+		const loadExistingImages = async () => {
+		  if (Object.keys(existingImagesData).length > 0) {
+			const convertedImagesData = {};
+			
+			for (const [sku, data] of Object.entries(existingImagesData)) {
+			  const filePromises = data.files.map((url, index) => 
+				urlToFile(url, data.names[index])
+			  );
+			  
+			  try {
+				const convertedFiles = await Promise.all(filePromises);
+				const validFiles = convertedFiles.filter(file => file !== null);
+				
+				if (validFiles.length > 0) {
+				  convertedImagesData[sku] = {
+					files: validFiles,
+					names: validFiles.map(file => file.name)
+				  };
+				}
+			  } catch (error) {
+				console.error(`Error converting files for SKU ${sku}:`, error);
+			  }
+			}
+	
+			console.log("Converted images data:", convertedImagesData);
+			setImages(convertedImagesData);
+			setSelectedVariations(Object.keys(convertedImagesData));
+		  }
+		};
+	
+		loadExistingImages();
+	  }, [existingImagesData]);
 
 	// Toggle variation selection
 	const handleVariationToggle = (sku) => {
@@ -38,18 +76,20 @@ const ImageUploadUI = ({
 
 	// Handle file upload: Add new images to the existing ones
 	const handleFileChange = (sku, event) => {
-		const files = Array.from(event.target.files);
-
-		setImages((prevImages) => ({
+		const newFiles = Array.from(event.target.files);
+		
+		setImages((prevImages) => {
+		  const existingFiles = prevImages[sku]?.files || [];
+		  const existingNames = prevImages[sku]?.names || [];
+		  
+		  return {
 			...prevImages,
 			[sku]: {
-				files: [...(prevImages[sku]?.files || []), ...files], // Append new files
-				names: [
-					...(prevImages[sku]?.names || []),
-					...files.map((file) => file.name), // Append new names
-				],
-			},
-		}));
+			  files: [...existingFiles, ...newFiles],
+			  names: [...existingNames, ...newFiles.map(file => file.name)]
+			}
+		  };
+		});
 	};
 
 	// Remove an image by index

@@ -26,9 +26,9 @@ export default async function login(req, res) {
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log("Login - Stored Hashed Password:", user.password);
-        console.log("Login - Plaintext Password:", password);
-        console.log("Login - Comparison Result:", await bcrypt.compare(password, user.password));
+        // console.log("Login - Stored Hashed Password:", user.password);
+        // console.log("Login - Plaintext Password:", password);
+        // console.log("Login - Comparison Result:", await bcrypt.compare(password, user.password));
 
 
         if (!isPasswordValid) {
@@ -61,8 +61,8 @@ export default async function login(req, res) {
 
         req.session.save()
 
-        console.log("Session after login")
-        console.log(req.session)
+        // console.log("Session after login")
+        // console.log(req.session)
 
         res.status(200).json({
             message: "Login successful!",
