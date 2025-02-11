@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import Footer from "../components/Footer"; // Import Footer component
 import {
   Box,
   Paper,
@@ -135,19 +136,20 @@ const Cart = () => {
         >
           <Typography variant="h5">Your cart is empty.</Typography>
         </Box>
+        <Footer />
       </>
     );
   }
 
   return (
-    <div>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
       <Box
         sx={{
+          flex: 1,
           p: 4,
           bgcolor: "background.default",
           color: "text.primary",
-          minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
         }}
@@ -245,6 +247,9 @@ const Cart = () => {
           </Button>
         </Box>
       </Box>
+
+      {/* Footer Component */}
+      <Footer />
     </div>
   );
 };

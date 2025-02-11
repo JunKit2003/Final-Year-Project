@@ -3,6 +3,7 @@ import { Box, Button, TextField, Typography, Card, CardContent } from "@mui/mate
 import { useNavigate, Link } from "react-router-dom";
 import axios from "../AxiosSingleton";
 import Header from "../components/Header"; // Import Header component
+import Footer from "../components/Footer"; // Import Footer component
 
 function Login() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
@@ -46,9 +47,10 @@ function Login() {
   };
 
   return (
-    <div>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+
+      <Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Card sx={{ width: 400, padding: 4 }}>
           <CardContent>
             <Typography variant="h5" align="center" gutterBottom>
@@ -106,7 +108,9 @@ function Login() {
           </CardContent>
         </Card>
       </Box>
-    </div>
+
+      <Footer />
+    </Box>
   );
 }
 

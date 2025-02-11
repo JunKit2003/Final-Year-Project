@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { loadStripe } from "@stripe/stripe-js";
+import Header from "../components/Header";
+import Footer from "../components/Footer"; // ✅ Import Footer component
 import {
   Box,
   Typography,
@@ -16,13 +18,13 @@ const CheckoutPage = () => {
   const [sessionUser, setSessionUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
-  const [recipientName, setRecipientName] = useState(""); // NEW
+  const [recipientName, setRecipientName] = useState("");
   const [address, setAddress] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 1) Fetch session user by POSTing to /api/account/authenticate
+  // 1) Fetch session user
   useEffect(() => {
     const fetchSessionUser = async () => {
       try {
@@ -34,13 +36,12 @@ const CheckoutPage = () => {
         setSessionUser(response.data.user);
       } catch (err) {
         console.error("Error authenticating user:", err);
-        // Optionally redirect to login if not authenticated
       }
     };
     fetchSessionUser();
   }, []);
 
-  // 2) Parse selected item IDs from the URL query parameter: "?selected=[...]"
+  // 2) Parse selected item IDs from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const selectedStr = params.get("selected");
@@ -54,7 +55,7 @@ const CheckoutPage = () => {
     try {
       const parsedIds = JSON.parse(selectedStr);
       if (!Array.isArray(parsedIds) || parsedIds.length === 0) {
-        console.warn("Empty or invalid selected items. Redirecting to Cart...");
+        console.warn("Invalid selected items. Redirecting to Cart...");
         window.location.href = "/cart";
         return;
       }
@@ -65,26 +66,23 @@ const CheckoutPage = () => {
     }
   }, []);
 
-  // 3) Once we have the sessionUser + selectedItemIds, fetch the cart and filter
+  // 3) Fetch selected cart items
   useEffect(() => {
     if (!sessionUser || !sessionUser.id) return;
-    if (selectedItemIds.length === 0) return; // or wait for them to load
+    if (selectedItemIds.length === 0) return;
 
     const fetchSelectedCartItems = async () => {
       try {
-        // Fetch user's full cart
         const response = await axios.get(
           `${process.env.REACT_APP_BACKEND_HOST}/api/cart/${sessionUser.id}`,
           { withCredentials: true }
         );
 
-        // Filter only the selected items
         const fullCart = response.data;
         const filteredItems = fullCart.filter((item) =>
           selectedItemIds.includes(item.id)
         );
 
-        // Update state
         setCartItems(filteredItems);
 
         // Calculate total
@@ -123,7 +121,7 @@ const CheckoutPage = () => {
 
       const payload = {
         user_id: sessionUser.id,
-        recipient_name: recipientName, // NEW
+        recipient_name: recipientName,
         shipping_address: address,
         items: cartItems.map((item) => ({
           variation_id: item.variation.id,
@@ -154,101 +152,105 @@ const CheckoutPage = () => {
       await stripe.redirectToCheckout({ sessionId: response.data.sessionId });
     } catch (error) {
       console.error("Error placing order:", error);
-      setError("Failed to place order. Please check your details and try again.");
+      setError("Failed to place order. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // If user is not authenticated or we haven't finished loading
   if (!sessionUser) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h6">Authenticating user...</Typography>
-      </Box>
+      <>
+        <Header />
+        <Box sx={{ p: 4, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <Typography variant="h6">Authenticating user...</Typography>
+        </Box>
+        <Footer />
+      </>
     );
   }
 
-  // If we have no cart items (meaning either empty or not loaded yet)
   if (cartItems.length === 0) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h6">No selected items found in your cart.</Typography>
-      </Box>
+      <>
+        <Header />
+        <Box sx={{ p: 4, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <Typography variant="h6">No selected items found in your cart.</Typography>
+        </Box>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Checkout
-      </Typography>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Header />
 
-      {error && (
-        <Typography variant="body1" color="error" gutterBottom>
-          {error}
+      <Box sx={{ flex: 1, p: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Checkout
         </Typography>
-      )}
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6">Recipient Name</Typography>
-        <TextField
+        {error && (
+          <Typography variant="body1" color="error" gutterBottom>
+            {error}
+          </Typography>
+        )}
+
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6">Recipient Name</Typography>
+          <TextField
+            fullWidth
+            label="Recipient Name"
+            variant="outlined"
+            value={recipientName}
+            onChange={(e) => setRecipientName(e.target.value)}
+            margin="normal"
+          />
+        </Paper>
+
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6">Shipping Address</Typography>
+          <TextField
+            fullWidth
+            label="Shipping Address"
+            variant="outlined"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            margin="normal"
+          />
+        </Paper>
+
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6">Order Summary</Typography>
+          {cartItems.map((item) => (
+            <Grid container key={item.id} spacing={1}>
+              <Grid item xs={6}>{item.variation.product.name}</Grid>
+              <Grid item xs={3}>x{item.quantity}</Grid>
+              <Grid item xs={3}>RM{item.variation.price * item.quantity}</Grid>
+            </Grid>
+          ))}
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="h6">Total: RM{totalAmount}</Typography>
+        </Paper>
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handlePlaceOrder}
+          disabled={loading}
           fullWidth
-          label="Recipient Name"
-          variant="outlined"
-          value={recipientName}
-          onChange={(e) => setRecipientName(e.target.value)}
-          margin="normal"
-        />
-      </Paper>
+        >
+          {loading ? <CircularProgress size={24} /> : "Place Order"}
+        </Button>
+      </Box>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6">Shipping Address</Typography>
-        <TextField
-          fullWidth
-          label="Shipping Address"
-          variant="outlined"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          margin="normal"
-        />
-      </Paper>
-
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6">Order Summary</Typography>
-        {cartItems.map((item) => (
-          <Grid container key={item.id} spacing={1}>
-            <Grid item xs={6}>
-              {item.variation.product.name}
-            </Grid>
-            <Grid item xs={3}>
-              x{item.quantity}
-            </Grid>
-            <Grid item xs={3}>
-              RM{item.variation.price * item.quantity}
-            </Grid>
-          </Grid>
-        ))}
-        <Divider sx={{ my: 2 }} />
-        <Typography variant="h6">Total: RM{totalAmount}</Typography>
-      </Paper>
-
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6">Payment Method</Typography>
-        <Typography>Stripe (Credit/Debit Card)</Typography>
-      </Paper>
-
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handlePlaceOrder}
-        disabled={loading}
-        fullWidth
-      >
-        {loading ? <CircularProgress size={24} /> : "Place Order"}
-      </Button>
+      <Footer />
     </Box>
   );
 };
 
 export default CheckoutPage;
+
+
+// Add a feature where if a user clicks on previous link while paying on stripe, it redirects them to payment failed page 

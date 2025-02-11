@@ -3,6 +3,7 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Typography, Paper, Button } from "@mui/material";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const CustomerViewOrderList = () => {
   const { uid, orderId } = useParams();
@@ -116,11 +117,8 @@ const CustomerViewOrderList = () => {
   // Loading State
   if (loading) {
     return (
-      <Box>
-        <Header />
-        <Box sx={{ p: 3 }}>
-          <Typography>Loading order details...</Typography>
-        </Box>
+      <Box sx={{ p: 3, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <Typography variant="h5">Loading order details...</Typography>
       </Box>
     );
   }
@@ -128,11 +126,8 @@ const CustomerViewOrderList = () => {
   // Error State
   if (error) {
     return (
-      <Box>
-        <Header />
-        <Box sx={{ p: 3 }}>
-          <Typography color="error">{error}</Typography>
-        </Box>
+      <Box sx={{ p: 3, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <Typography variant="h5" color="error">{error}</Typography>
       </Box>
     );
   }
@@ -140,20 +135,18 @@ const CustomerViewOrderList = () => {
   // No Order Found
   if (!order) {
     return (
-      <Box>
-        <Header />
-        <Box sx={{ p: 3 }}>
-          <Typography color="error">Order not found.</Typography>
-        </Box>
+      <Box sx={{ p: 3, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <Typography variant="h5" color="error">Order not found.</Typography>
       </Box>
     );
   }
 
   // Render Read-Only Order Details
   return (
-    <Box>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
-      <Box sx={{ p: 3 }}>
+
+      <Box sx={{ flex: 1, p: 3 }}>
         <Typography variant="h4" gutterBottom>
           Order Details
         </Typography>
@@ -217,6 +210,8 @@ const CustomerViewOrderList = () => {
           Back to Order History
         </Button>
       </Box>
+
+      <Footer />
     </Box>
   );
 };

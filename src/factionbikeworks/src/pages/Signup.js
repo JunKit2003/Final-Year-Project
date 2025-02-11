@@ -9,7 +9,8 @@ import {
 } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "../AxiosSingleton";
-import Header from "../components/Header"; // Same Header component
+import Header from "../components/Header"; 
+import Footer from "../components/Footer"; // ✅ Import Footer component
 
 function Signup() {
   const [firstName, setFirstName] = useState("");
@@ -66,14 +67,15 @@ function Signup() {
   };
 
   return (
-    <div>
-      <Header /> {/* If you want the same header as in the Login page */}
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Header />
+
       <Box
         sx={{
+          flex: 1,
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          height: "100vh",
         }}
       >
         <Card sx={{ width: 400, padding: 4 }}>
@@ -185,7 +187,9 @@ function Signup() {
           </CardContent>
         </Card>
       </Box>
-    </div>
+
+      <Footer />
+    </Box>
   );
 }
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 import Header from "../components/Header";
+import Footer from "../components/Footer"; // ✅ Import Footer component
 import { Box, Typography, Paper, Button } from "@mui/material";
 
 const OrderHistory = () => {
@@ -61,30 +62,34 @@ const OrderHistory = () => {
 
   if (loading) {
     return (
-      <Box>
+      <>
         <Header />
-        <Box sx={{ p: 3 }}>
-          <Typography>Loading your order history...</Typography>
+        <Box sx={{ p: 3, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <Typography variant="h5">Loading your order history...</Typography>
         </Box>
-      </Box>
+        <Footer />
+      </>
     );
   }
 
   if (error) {
     return (
-      <Box>
+      <>
         <Header />
-        <Box sx={{ p: 3 }}>
-          <Typography color="error">{error}</Typography>
+        <Box sx={{ p: 3, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <Typography variant="h5" color="error">{error}</Typography>
         </Box>
-      </Box>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <Box>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
-      <Box sx={{ p: 3 }}>
+
+      {/* Main Content */}
+      <Box sx={{ flex: 1, p: 3 }}>
         <Typography variant="h4" gutterBottom>
           My Order History
         </Typography>
@@ -117,6 +122,9 @@ const OrderHistory = () => {
           ))
         )}
       </Box>
+
+      {/* Footer Component */}
+      <Footer />
     </Box>
   );
 };

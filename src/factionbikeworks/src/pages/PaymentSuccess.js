@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import {
   Box,
   Typography,
@@ -76,32 +78,39 @@ const PaymentSuccess = () => {
     finalizePayment();
   }, [sessionUser]); // ✅ Dependencies unchanged
 
-  return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Payment Status
-      </Typography>
+  if (loading) {
+    return (
+      <Box sx={{ p: 4, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <Typography variant="h4">Processing Payment...</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mt: 2 }}>
+          <CircularProgress size={24} sx={{ mr: 2 }} />
+          <Typography>{message}</Typography>
+        </Box>
+      </Box>
+    );
+  }
 
-      <Paper sx={{ p: 3, mt: 2 }}>
-        {loading ? (
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <CircularProgress />
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              {message}
-            </Typography>
-          </Box>
-        ) : (
+  return (
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Header />
+
+      <Box sx={{ flex: 1, p: 4, textAlign: "center" }}>
+        <Typography variant="h4" gutterBottom>
+          Payment Status
+        </Typography>
+
+        <Paper sx={{ p: 3, mt: 2 }}>
           <Typography variant="h6" color={error ? "error" : "success"}>
             {error || message}
           </Typography>
-        )}
-      </Paper>
+        </Paper>
 
-      {!loading && (
-        <Button variant="contained" color="primary" sx={{ mt: 2 }} href="/">
+        <Button variant="contained" color="primary" sx={{ mt: 3 }} href="/">
           Return to Home
         </Button>
-      )}
+      </Box>
+
+      <Footer />
     </Box>
   );
 };

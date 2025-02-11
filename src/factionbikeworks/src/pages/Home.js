@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
+import Footer from "../components/Footer"; // Import Footer
 import {
   Box,
   Typography,
@@ -23,16 +24,13 @@ function Home() {
   const theme = useTheme();
 
   useEffect(() => {
-    // 1) Fetch Banner Images
     const fetchImages = async () => {
       try {
         const response = await axios.post(
           `${process.env.REACT_APP_BACKEND_HOST}/api/banner/get`,
           {},
           {
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             withCredentials: true,
           }
         );
@@ -49,21 +47,17 @@ function Home() {
       }
     };
 
-    // 2) Fetch Brand Images
     const fetchBrandImages = async () => {
       try {
         const response = await axios.post(
           `${process.env.REACT_APP_BACKEND_HOST}/api/product/getBrandImages`,
           {},
           {
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             withCredentials: true,
           }
         );
         const data = response.data;
-        console.log("Fetched brand images:", data.brands);
         setBrands(data.brands);
       } catch (error) {
         console.error("Error fetching brand images:", error);
@@ -74,7 +68,6 @@ function Home() {
     fetchBrandImages();
   }, []);
 
-  // Banner Carousel settings
   const bannerSettings = {
     dots: true,
     infinite: true,
@@ -85,7 +78,6 @@ function Home() {
     autoplaySpeed: 3000,
   };
 
-  // Utility: chunk array into groups of "size"
   const chunkArray = (arr, size) => {
     const chunks = [];
     for (let i = 0; i < arr.length; i += size) {
@@ -94,23 +86,21 @@ function Home() {
     return chunks;
   };
 
-  // Brand Carousel Settings (6 items per slide)
   const brandSliderSettings = {
     dots: true,
     infinite: false,
     speed: 500,
-    slidesToShow: 1, // Show one "slide" at a time
+    slidesToShow: 1,
     slidesToScroll: 1,
   };
 
-  // Chunk the brands into groups of 6 for the carousel
   const brandChunks = chunkArray(brands, 6);
 
   return (
-    <div style={{ margin: 0, padding: 0 }}>
+    // OverflowX hidden to prevent horizontal scroll
+    <div style={{ margin: 0, padding: 0, overflowX: "hidden" }}>
       <Header />
 
-      {/* Advertisement Carousel Section */}
       <Box
         sx={{
           width: "100%",
@@ -139,10 +129,9 @@ function Home() {
         </Slider>
       </Box>
 
-      {/* Shop by Brands Section */}
       <Box
         sx={{
-          padding: { xs: 2, sm: 4 }, // Reduced padding on mobile (xs)
+          padding: { xs: 2, sm: 4 },
           bgcolor: "background.default",
         }}
       >
@@ -159,7 +148,6 @@ function Home() {
 
         {!showAllBrands && (
           <>
-            {/* Display first 3 brands in one row */}
             <Grid container spacing={4} columns={3}>
               {brands.slice(0, 3).map((brand, index) => {
                 const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
@@ -176,7 +164,7 @@ function Home() {
                             image={fullImageUrl}
                             alt={brand.brandName}
                             sx={{
-                              height: { xs: 150, sm: 200 }, // Shorter height on mobile
+                              height: { xs: 150, sm: 200 },
                               objectFit: "contain",
                             }}
                           />
@@ -185,7 +173,6 @@ function Home() {
                           sx={{
                             textAlign: "center",
                             padding: { xs: 1, sm: 2 },
-                            // Reduce top padding to bring text closer to the photo on mobile
                             pt: { xs: 0.5, sm: 2 },
                           }}
                         >
@@ -193,7 +180,11 @@ function Home() {
                             variant="h6"
                             component="div"
                             sx={{
-                              fontSize: { xs: "0.9rem", sm: "1rem", md: "1.25rem" },
+                              fontSize: {
+                                xs: "0.9rem",
+                                sm: "1rem",
+                                md: "1.25rem",
+                              },
                               mt: { xs: 0.5, sm: 1 },
                             }}
                           >
@@ -207,7 +198,6 @@ function Home() {
               })}
             </Grid>
 
-            {/* Show More Button (only if more than 3 brands exist) */}
             {brands.length > 3 && (
               <Box sx={{ textAlign: "center", marginTop: 2 }}>
                 <Button variant="contained" onClick={() => setShowAllBrands(true)}>
@@ -220,7 +210,6 @@ function Home() {
 
         {showAllBrands && (
           <>
-            {/* Carousel view with 6 items (2 rows x 3 columns) */}
             <Slider {...brandSliderSettings}>
               {brandChunks.map((chunk, i) => (
                 <div key={i}>
@@ -256,7 +245,11 @@ function Home() {
                                   variant="h6"
                                   component="div"
                                   sx={{
-                                    fontSize: { xs: "0.9rem", sm: "1rem", md: "1.25rem" },
+                                    fontSize: {
+                                      xs: "0.9rem",
+                                      sm: "1rem",
+                                      md: "1.25rem",
+                                    },
                                     mt: { xs: 0.5, sm: 1 },
                                   }}
                                 >
@@ -273,7 +266,6 @@ function Home() {
               ))}
             </Slider>
 
-            {/* Show Less Button */}
             <Box sx={{ textAlign: "center", marginTop: 2 }}>
               <Button variant="contained" onClick={() => setShowAllBrands(false)}>
                 Show Less
@@ -283,7 +275,6 @@ function Home() {
         )}
       </Box>
 
-      {/* Embedded Map Section */}
       <Box sx={{ width: "100%", margin: 0, padding: 0 }}>
         <iframe
           title="map"
@@ -297,9 +288,10 @@ function Home() {
           }}
           allowFullScreen
           loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
         />
       </Box>
+
+      <Footer />
     </div>
   );
 }

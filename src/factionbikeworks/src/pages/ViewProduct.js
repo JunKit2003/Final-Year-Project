@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 import {
   Box,
   Typography,
@@ -115,17 +116,18 @@ const ViewProduct = () => {
   };
 
   return (
-    <div>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
+
       <Box
         sx={{
+          flex: 1,
           padding: 4,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           bgcolor: "background.default",
           color: "text.primary",
-          minHeight: "100vh",
         }}
       >
         <Paper elevation={3} sx={{ padding: 3, width: "80%", maxWidth: "800px" }}>
@@ -240,7 +242,9 @@ const ViewProduct = () => {
           </Alert>
         </Snackbar>
       </Box>
-    </div>
+
+      <Footer />
+    </Box>
   );
 };
 

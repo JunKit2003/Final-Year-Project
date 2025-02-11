@@ -9,7 +9,8 @@ import {
 } from "@mui/material";
 import axios from "../AxiosSingleton";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header"; // Optional: your header component
+import Header from "../components/Header";
+import Footer from "../components/Footer"; // ✅ Import Footer component
 
 /**
  * Two-step Password Reset flow:
@@ -212,14 +213,17 @@ function PasswordReset() {
   };
 
   return (
-    <div>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+
+      <Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Card sx={{ width: 400, padding: 4 }}>
           <CardContent>{renderForm()}</CardContent>
         </Card>
       </Box>
-    </div>
+
+      <Footer />
+    </Box>
   );
 }
 
