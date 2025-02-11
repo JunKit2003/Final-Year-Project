@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { useTheme } from '@mui/material/styles';
+import { useTheme } from "@mui/material/styles";
 
 function Home() {
   const [images, setImages] = useState([]);
@@ -85,7 +85,7 @@ function Home() {
     autoplaySpeed: 3000,
   };
 
-  // === Utility: chunk array into groups of "size" ===
+  // Utility: chunk array into groups of "size"
   const chunkArray = (arr, size) => {
     const chunks = [];
     for (let i = 0; i < arr.length; i += size) {
@@ -94,23 +94,13 @@ function Home() {
     return chunks;
   };
 
-  // === Brand Carousel Settings (6 items per slide) ===
+  // Brand Carousel Settings (6 items per slide)
   const brandSliderSettings = {
     dots: true,
     infinite: false,
     speed: 500,
-    slidesToShow: 1,  // We show 1 "slide" at a time, but each "slide" has 6 items in a 2x3 grid
+    slidesToShow: 1, // Show one "slide" at a time
     slidesToScroll: 1,
-    // Adjust or add responsive settings if needed:
-    // responsive: [
-    //   {
-    //     breakpoint: 1200,
-    //     settings: {
-    //       slidesToShow: 1,
-    //       slidesToScroll: 1,
-    //     },
-    //   },
-    // ],
   };
 
   // Chunk the brands into groups of 6 for the carousel
@@ -121,7 +111,14 @@ function Home() {
       <Header />
 
       {/* Advertisement Carousel Section */}
-      <Box sx={{ width: "100%", margin: 0, padding: 0, backgroundColor: "black" }}>
+      <Box
+        sx={{
+          width: "100%",
+          margin: 0,
+          padding: 0,
+          backgroundColor: "black",
+        }}
+      >
         <Slider {...bannerSettings}>
           {images.map((image, index) => (
             <div key={index}>
@@ -143,19 +140,31 @@ function Home() {
       </Box>
 
       {/* Shop by Brands Section */}
-      <Box sx={{ padding: 4, bgcolor: "background.default" }}>
-        <Typography variant="h4" align="center" gutterBottom>
+      <Box
+        sx={{
+          padding: { xs: 2, sm: 4 }, // Reduced padding on mobile (xs)
+          bgcolor: "background.default",
+        }}
+      >
+        <Typography
+          variant="h4"
+          align="center"
+          gutterBottom
+          sx={{
+            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+          }}
+        >
           Shop by Brands
         </Typography>
 
         {!showAllBrands && (
           <>
-            {/* Show first 3 brands (collapsed view) */}
-            <Grid container spacing={4}>
+            {/* Display first 3 brands in one row */}
+            <Grid container spacing={4} columns={3}>
               {brands.slice(0, 3).map((brand, index) => {
                 const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={brand.id || index}>
+                  <Grid item xs={1} key={brand.id || index}>
                     <Link
                       to={`/catalog/${brand.brandName}`}
                       style={{ textDecoration: "none", color: "inherit" }}
@@ -164,14 +173,30 @@ function Home() {
                         {brand.imageUrl && (
                           <CardMedia
                             component="img"
-                            height="200"
                             image={fullImageUrl}
                             alt={brand.brandName}
-                            style={{ objectFit: "contain" }}
+                            sx={{
+                              height: { xs: 150, sm: 200 }, // Shorter height on mobile
+                              objectFit: "contain",
+                            }}
                           />
                         )}
-                        <CardContent sx={{ textAlign: "center" }}>
-                          <Typography variant="h5" component="div">
+                        <CardContent
+                          sx={{
+                            textAlign: "center",
+                            padding: { xs: 1, sm: 2 },
+                            // Reduce top padding to bring text closer to the photo on mobile
+                            pt: { xs: 0.5, sm: 2 },
+                          }}
+                        >
+                          <Typography
+                            variant="h6"
+                            component="div"
+                            sx={{
+                              fontSize: { xs: "0.9rem", sm: "1rem", md: "1.25rem" },
+                              mt: { xs: 0.5, sm: 1 },
+                            }}
+                          >
                             {brand.brandName}
                           </Typography>
                         </CardContent>
@@ -195,15 +220,15 @@ function Home() {
 
         {showAllBrands && (
           <>
-            {/* Show carousel with 6 items at a time in 2 rows × 3 columns */}
+            {/* Carousel view with 6 items (2 rows x 3 columns) */}
             <Slider {...brandSliderSettings}>
               {brandChunks.map((chunk, i) => (
                 <div key={i}>
-                  <Grid container spacing={4} sx={{ padding: 2 }}>
+                  <Grid container spacing={4} columns={3} sx={{ padding: 2 }}>
                     {chunk.map((brand, index) => {
                       const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
                       return (
-                        <Grid item xs={12} sm={6} md={4} key={brand.id || index}>
+                        <Grid item xs={1} key={brand.id || index}>
                           <Link
                             to={`/catalog/${brand.brandName}`}
                             style={{ textDecoration: "none", color: "inherit" }}
@@ -212,14 +237,29 @@ function Home() {
                               {brand.imageUrl && (
                                 <CardMedia
                                   component="img"
-                                  height="200"
                                   image={fullImageUrl}
                                   alt={brand.brandName}
-                                  style={{ objectFit: "contain" }}
+                                  sx={{
+                                    height: { xs: 150, sm: 200 },
+                                    objectFit: "contain",
+                                  }}
                                 />
                               )}
-                              <CardContent sx={{ textAlign: "center" }}>
-                                <Typography variant="h5" component="div">
+                              <CardContent
+                                sx={{
+                                  textAlign: "center",
+                                  padding: { xs: 1, sm: 2 },
+                                  pt: { xs: 0.5, sm: 2 },
+                                }}
+                              >
+                                <Typography
+                                  variant="h6"
+                                  component="div"
+                                  sx={{
+                                    fontSize: { xs: "0.9rem", sm: "1rem", md: "1.25rem" },
+                                    mt: { xs: 0.5, sm: 1 },
+                                  }}
+                                >
                                   {brand.brandName}
                                 </Typography>
                               </CardContent>
@@ -252,7 +292,6 @@ function Home() {
           height="450"
           style={{
             border: 0,
-            // Invert in dark mode
             filter: theme.palette.mode === "dark" ? "invert(1)" : "invert(0)",
             transition: "filter 0.3s ease-in-out",
           }}
