@@ -58,6 +58,13 @@ class BannerExistsError extends DatabaseError {
 	}
 }
 
+class UserNotFoundError extends DatabaseError {
+    constructor() {
+        super("User not found!");
+        this.name = "UserNotFoundError";
+    }
+}
+
 // Database Utility functions
 
 async function pingDatabase() {
@@ -786,5 +793,6 @@ export {
     ProductExistsError,
     BannerNotFoundError,
     BannerExistsError,
+	UserNotFoundError,
 };
 
