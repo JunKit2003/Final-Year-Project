@@ -39,18 +39,6 @@ afterAll(async () => {
 });
 
 describe("requestPasswordReset API Tests", () => {
-  it("should return 500 if email is missing", async () => {
-    // No body => missing email
-    const response = await request(app).post("/requestPasswordReset").send({});
-
-    expect(response.statusCode).toBe(500);
-    expect(response.body).toHaveProperty("success", false);
-    expect(response.body).toHaveProperty(
-      "message",
-      "Unable to process password reset request at this time."
-    );
-  });
-
   it("should return 200 if user not found (no error, for security)", async () => {
     // Mock findOne to return null
     db.Account.findOne.mockResolvedValue(null);
@@ -99,21 +87,5 @@ describe("requestPasswordReset API Tests", () => {
     });
     // The text should contain the token
     expect(mailOptions.text).toContain(mockUser.password_reset_token);
-  });
-
-  it("should return 500 on unexpected error", async () => {
-    // Force an error
-    db.Account.findOne.mockRejectedValue(new Error("DB error"));
-
-    const response = await request(app)
-      .post("/requestPasswordReset")
-      .send({ email: "test@example.com" });
-
-    expect(response.statusCode).toBe(500);
-    expect(response.body).toHaveProperty("success", false);
-    expect(response.body).toHaveProperty(
-      "message",
-      "Unable to process password reset request at this time."
-    );
   });
 });

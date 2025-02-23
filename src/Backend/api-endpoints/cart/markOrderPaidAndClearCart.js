@@ -80,9 +80,9 @@ export default async function markOrderPaidAndClearCart(req, res) {
       if (variation) {
         const newStock = Math.max(0, variation.stock - totalQuantity); // Prevent negative stock
         await variation.update({ stock: newStock }, { transaction });
-        console.log(`Stock updated for variation ${variationId}: New stock = ${newStock}`);
+        //console.log(`Stock updated for variation ${variationId}: New stock = ${newStock}`);
       } else {
-        console.warn(`Variation ${variationId} not found!`);
+        //console.warn(`Variation ${variationId} not found!`);
       }
     }
 
@@ -97,7 +97,7 @@ export default async function markOrderPaidAndClearCart(req, res) {
       transaction,
     });
 
-    console.log("Cleared cart items:", selectedVariationIds);
+    //console.log("Cleared cart items:", selectedVariationIds);
 
     // 11) Commit the transaction if everything succeeds
     await transaction.commit();
@@ -119,7 +119,7 @@ export default async function markOrderPaidAndClearCart(req, res) {
     } else if (error instanceof DatabaseError) {
       return res.status(500).json({ message: error.message });
     } else {
-      console.error("Error marking order Paid and updating stock:", error);
+      //console.error("Error marking order Paid and updating stock:", error);
       return res.status(500).json({ message: "Internal server error", error });
     }
   }

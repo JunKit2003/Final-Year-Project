@@ -22,7 +22,7 @@ export default async function addBanner(req, res) {
             name: `banner_image_${Date.now()}_${index + 1}`, // Unique name using timestamp
         }));
 
-        console.log("Images Data:", imagesData); // Log to check format
+        //console.log("Images Data:", imagesData); // Log to check format
 
         // Save images and get the filenames (not paths)
         const filenames = await uploadBannerImages(imagesData);

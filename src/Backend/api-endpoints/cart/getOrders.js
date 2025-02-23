@@ -1,4 +1,4 @@
-// controllers/getOrders.js
+// cart/getOrders.js
 import {
     pingDatabase,
     DatabaseConnectionError,

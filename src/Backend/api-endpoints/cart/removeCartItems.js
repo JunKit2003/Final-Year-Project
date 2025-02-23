@@ -10,7 +10,7 @@ import {
     try {
       await pingDatabase();
   
-      console.log("Request Params:", req.params); // Debugging
+      //console.log("Request Params:", req.params); // Debugging
   
       const { cart_item_id } = req.params;
   
@@ -18,7 +18,7 @@ import {
         throw new InputValidationError("Missing parameter: cart_item_id.");
       }
   
-      console.log("Cart Item ID Passed to DB Function:", cart_item_id); // Add Debugging
+      //console.log("Cart Item ID Passed to DB Function:", cart_item_id); // Add Debugging
   
       await removeCartItemFromDB(cart_item_id);
   
