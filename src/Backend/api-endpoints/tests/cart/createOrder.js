@@ -1,10 +1,19 @@
-// tests/cart/createOrder.test.js
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+// tests/createOrder.test.js
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import request from "supertest";
 import express from "express";
 import bodyParser from "body-parser";
 
-// 1️⃣ Mock dependencies BEFORE importing `createOrder.js`
+// ───────────────────────────────────────────────
+// 0️⃣ Define fakeTransaction using "var" so it is hoisted
+// ───────────────────────────────────────────────
+var commitMock = vi.fn();
+var rollbackMock = vi.fn();
+var fakeTransaction = { commit: commitMock, rollback: rollbackMock };
+
+// ───────────────────────────────────────────────
+// 1️⃣ Mock database utilities BEFORE importing createOrder.js
+// ───────────────────────────────────────────────
 vi.mock("../../../database/utils.js", () => ({
   pingDatabase: vi.fn(),
   DatabaseConnectionError: class DatabaseConnectionError extends Error {},
@@ -12,20 +21,14 @@ vi.mock("../../../database/utils.js", () => ({
   DatabaseError: class DatabaseError extends Error {},
 }));
 
+// ───────────────────────────────────────────────
+// 2️⃣ Mock the database module BEFORE importing createOrder.js
+// ───────────────────────────────────────────────
 vi.mock("../../../database/index.js", () => {
-  // Mocks for sequelize transaction
-  const commitMock = vi.fn();
-  const rollbackMock = vi.fn();
-  const transactionMock = vi.fn().mockResolvedValue({
-    commit: commitMock,
-    rollback: rollbackMock,
-  });
-
-  // Mocks for Models
-  const createOrderMock = vi.fn();
-  const createOrderItemMock = vi.fn();
-  const findByPkMock = vi.fn();
-
+  var createOrderMock = vi.fn();
+  var createOrderItemMock = vi.fn();
+  var findByPkMock = vi.fn();
+  var transactionMock = vi.fn().mockResolvedValue(fakeTransaction);
   return {
     db: {
       sequelize: {
@@ -44,53 +47,57 @@ vi.mock("../../../database/index.js", () => {
   };
 });
 
-// Mock Stripe
+// ───────────────────────────────────────────────
+// 3️⃣ Mock the Stripe module BEFORE importing createOrder.js
+// ───────────────────────────────────────────────
+var stripeCreateMock = vi.fn();
 vi.mock("stripe", () => {
   return {
     default: class Stripe {
-      constructor() {}
-      checkout = {
-        sessions: {
-          create: vi.fn(),
-        },
-      };
+      constructor(secret) {
+        // Optionally, verify secret if needed.
+        this.checkout = { sessions: { create: stripeCreateMock } };
+      }
     },
+    stripeCreateMock,
   };
 });
 
-// 2️⃣ Import modules AFTER mocks
+// ───────────────────────────────────────────────
+// 4️⃣ Import modules AFTER mocks are set up
+// ───────────────────────────────────────────────
 import { db } from "../../../database/index.js";
-import createOrder from "../../cart/createOrder.js"; 
-// Adjust the path if your "createOrder.js" is located differently.
+import createOrder from "../../cart/createOrder.js"; // Adjust path if needed
+import { pingDatabase } from "../../../database/utils.js";
+import Stripe, { stripeCreateMock } from "stripe";
 
-import {
-  pingDatabase,
-  InputValidationError,
-} from "../../../database/utils.js";
-import Stripe from "stripe";
-
-// Access some of our mocks for easier reference
-const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
-const transactionMock = db.sequelize.transaction;
+// For easier access to mocks:
 const createOrderMock = db.Order.create;
 const createOrderItemMock = db.OrderItem.create;
 const findByPkMock = db.Variations.findByPk;
 
-// 3️⃣ Setup a minimal Express app to test our controller
+// ───────────────────────────────────────────────
+// 5️⃣ Setup Express app for testing
+// ───────────────────────────────────────────────
 const app = express();
 app.use(bodyParser.json());
-
-// The real route might be POST /createOrder:
 app.post("/createOrder", createOrder);
 
 beforeAll(async () => {
-  // If purely unit testing, no real DB connections needed
+  // No real DB connection needed for unit tests.
 });
 afterAll(async () => {
-  vi.resetAllMocks(); // or vi.clearAllMocks()
+  vi.resetAllMocks();
 });
 
-describe("createOrder API Tests (ignoring 500 errors)", () => {
+// ───────────────────────────────────────────────
+// 6️⃣ Write the tests
+// ───────────────────────────────────────────────
+describe("POST /createOrder - createOrder API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("should return 400 if 'user_id' is missing", async () => {
     const response = await request(app).post("/createOrder").send({
       items: [{ variation_id: 1, quantity: 2 }],
@@ -113,7 +120,7 @@ describe("createOrder API Tests (ignoring 500 errors)", () => {
     expect(response.statusCode).toBe(400);
     expect(response.body.message).toMatch(/Missing or invalid 'items'/i);
 
-    // Empty items
+    // Empty items array
     response = await request(app).post("/createOrder").send({
       user_id: 1,
       items: [],
@@ -184,8 +191,9 @@ describe("createOrder API Tests (ignoring 500 errors)", () => {
 
   it("should return 400 if Variation is not found", async () => {
     pingDatabase.mockResolvedValue();
-    createOrderMock.mockResolvedValue({ id: 123 }); 
-    // Variation not found -> findByPk returns null
+    // Simulate Order.create returns an order with id 123.
+    createOrderMock.mockResolvedValue({ id: 123 });
+    // Variation not found: findByPk returns null.
     findByPkMock.mockResolvedValue(null);
 
     const response = await request(app).post("/createOrder").send({
@@ -199,27 +207,32 @@ describe("createOrder API Tests (ignoring 500 errors)", () => {
     expect(response.body.message).toMatch(/Variation with id 999 not found/i);
   });
 
-  it("should return 200 and create order on success", async () => {
-    // Mock all dependencies
-    pingDatabase.mockResolvedValue();
-    createOrderMock.mockResolvedValue({ id: 555 });
-    findByPkMock.mockResolvedValue({ id: 777, name: "Test Variation", price: "19.99" });
-    createOrderItemMock.mockResolvedValue({}); // no real return needed
-
-    // Mock Stripe session creation
-    const stripeSessionCreateMock = stripeInstance.checkout.sessions.create;
-    stripeSessionCreateMock.mockResolvedValue({ id: "session_abc123" });
-
-    const response = await request(app).post("/createOrder").send({
+  it("should return 200 and a sessionId if order is created successfully", async () => {
+    const reqBody = {
       user_id: 1,
       items: [{ variation_id: 777, quantity: 2 }],
       shipping_address: "123 Test St",
       total_amount: 39.98,
       recipient_name: "Alice",
-    });
+    };
+
+    // Arrange: simulate successful DB ping.
+    pingDatabase.mockResolvedValue();
+    // Simulate order creation returning id 555.
+    createOrderMock.mockResolvedValue({ id: 555 });
+    // Simulate variation lookup returning a valid variation.
+    findByPkMock.mockResolvedValue({ id: 777, name: "Test Variation", price: "19.99" });
+    // Simulate OrderItem creation success.
+    createOrderItemMock.mockResolvedValue({});
+    // Simulate successful Stripe Checkout Session creation returning session id "session_abc123".
+    stripeCreateMock.mockResolvedValue({ id: "session_abc123" });
+
+    const response = await request(app).post("/createOrder").send(reqBody);
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toHaveProperty("sessionId", "session_abc123");
+
+    // Verify that Order.create was called with correct data.
     expect(createOrderMock).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 1,
@@ -230,6 +243,8 @@ describe("createOrder API Tests (ignoring 500 errors)", () => {
       }),
       expect.any(Object) // transaction object
     );
+
+    // Verify that OrderItem.create was called with the right data.
     expect(createOrderItemMock).toHaveBeenCalledWith(
       expect.objectContaining({
         orderId: 555,
@@ -239,12 +254,17 @@ describe("createOrder API Tests (ignoring 500 errors)", () => {
       }),
       expect.any(Object)
     );
-    expect(stripeSessionCreateMock).toHaveBeenCalledWith(
+
+    // Verify that Stripe Checkout Session was created with expected parameters.
+    expect(stripeCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         payment_method_types: ["card"],
         mode: "payment",
         metadata: { orderId: 555, userId: 1 },
       })
     );
+
+    // Verify that the transaction was committed.
+    expect(fakeTransaction.commit).toHaveBeenCalled();
   });
 });

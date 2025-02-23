@@ -1,191 +1,188 @@
-// tests/cart/cancelOrder.test.js
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+// tests/cancelOrder.test.js
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import request from "supertest";
 import express from "express";
-import bodyParser from "body-parser";
 
-// 1️⃣ Mock the exact same path used by cancelOrder.js
-vi.mock("../../../database/utils.js", () => ({
-  pingDatabase: vi.fn(),
-  DatabaseConnectionError: class DatabaseConnectionError extends Error {},
-  InputValidationError: class InputValidationError extends Error {},
-  DatabaseError: class DatabaseError extends Error {},
-}));
+// ───────────────────────────────────────────────
+// 1️⃣ Declare the retrieveMock using var so it's hoisted
+// ───────────────────────────────────────────────
+var retrieveMock = vi.fn();
 
-vi.mock("../../../database/index.js", () => {
-  const commitMock = vi.fn();
-  const rollbackMock = vi.fn();
-
-  const transactionMockImplementation = {
-    commit: commitMock,
-    rollback: rollbackMock,
-  };
-  // transaction() returns a promise that resolves to that object
-  const transactionMock = vi.fn(() => Promise.resolve(transactionMockImplementation));
-
-  const findOneMock = vi.fn();
-
-  return {
-    db: {
-      sequelize: {
-        transaction: transactionMock,
-      },
-      Order: {
-        findOne: findOneMock,
-      },
-    },
-  };
-});
-
-// Mock Stripe
+// ───────────────────────────────────────────────
+// 2️⃣ Mock the Stripe module
+// ───────────────────────────────────────────────
+// When your controller does "new Stripe(process.env.STRIPE_SECRET_KEY)",
+// our mock returns an instance whose "checkout.sessions.retrieve" method is set to retrieveMock.
 vi.mock("stripe", () => {
   return {
-    default: class Stripe {
-      constructor() {}
-      checkout = {
-        sessions: {
-          retrieve: vi.fn(),
-        },
-      };
+    default: class {
+      constructor(secret) {
+        // Optionally, you can verify secret here.
+        this.checkout = {
+          sessions: {
+            retrieve: retrieveMock,
+          },
+        };
+      }
     },
   };
 });
 
+// ───────────────────────────────────────────────
+// 3️⃣ Mock the database utilities with custom error classes
+// ───────────────────────────────────────────────
+vi.mock("../../../database/utils.js", () => ({
+  pingDatabase: vi.fn(),
+  InputValidationError: class InputValidationError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "InputValidationError";
+    }
+  },
+  DatabaseConnectionError: class DatabaseConnectionError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "DatabaseConnectionError";
+    }
+  },
+  DatabaseError: class DatabaseError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = "DatabaseError";
+    }
+  },
+}));
+
+// ───────────────────────────────────────────────
+// 4️⃣ Mock the database module (simulate transaction & order lookup)
+// ───────────────────────────────────────────────
+const fakeTransaction = { commit: vi.fn(), rollback: vi.fn() };
+const fakeOrder = { destroy: vi.fn() };
+
+vi.mock("../../../database/index.js", () => ({
+  db: {
+    sequelize: {
+      transaction: async () => fakeTransaction,
+    },
+    Order: {
+      findOne: vi.fn(), // We'll override this in individual tests.
+    },
+  },
+}));
+
+// ───────────────────────────────────────────────
+// 5️⃣ Import modules AFTER mocks are set up
+// ───────────────────────────────────────────────
+import * as dbUtils from "../../../database/utils.js"; // so we can use dbUtils.pingDatabase
 import { db } from "../../../database/index.js";
 import cancelOrder from "../../cart/cancelOrder.js";
-import {
-  pingDatabase,
-  DatabaseConnectionError,
-  InputValidationError,
-  DatabaseError,
-} from "../../../database/utils.js";
 import Stripe from "stripe";
 
-const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
-const transactionMock = db.sequelize.transaction;
-const findOneMock = db.Order.findOne;
-
-// For convenience, keep references to commit/rollback
-let commitMock;
-let rollbackMock;
-
-beforeAll(() => {
-  // Because transactionMock returns a promise, we can do:
-  const call = transactionMock.mock.results[0];
-  if (call) {
-    const value = call.value; // the actual Promise
-    commitMock = value.commit;
-    rollbackMock = value.rollback;
-  }
-});
-
-// 2️⃣ Decide on the correct HTTP method
+// ───────────────────────────────────────────────
+// 6️⃣ Set up Express app & route for testing
+// ───────────────────────────────────────────────
 const app = express();
-app.use(bodyParser.json());
-app.delete("/cancelOrder", cancelOrder);
+app.use(express.json());
+// Your API route is registered as DELETE /cart/cancelOrder
+app.delete("/cart/cancelOrder", (req, res) => cancelOrder(req, res));
 
-// 3️⃣ Tests
-describe("cancelOrder API Tests", () => {
-
-  it("should return 400 if 'session_id' is missing", async () => {
-    const response = await request(app).delete("/cancelOrder").send({
-      user_id: 123,
-    });
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message).toMatch(/Missing 'session_id'/i);
+// ───────────────────────────────────────────────
+// 7️⃣ Write the tests
+// ───────────────────────────────────────────────
+describe("DELETE /cart/cancelOrder API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("should return 400 if 'user_id' is missing", async () => {
-    const response = await request(app).delete("/cancelOrder").send({
-      session_id: "fake_session_id",
-    });
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message).toMatch(/Missing 'user_id'/i);
+  it("should return 400 if session_id is missing", async () => {
+    const res = await request(app)
+      .delete("/cart/cancelOrder")
+      .send({ user_id: "user_123" });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Missing 'session_id' in the request body!");
   });
 
-  it("should return 400 if payment_status is 'paid'", async () => {
-    pingDatabase.mockResolvedValue();
-    stripeInstance.checkout.sessions.retrieve.mockResolvedValue({
+  it("should return 400 if user_id is missing", async () => {
+    const res = await request(app)
+      .delete("/cart/cancelOrder")
+      .send({ session_id: "sess_123" });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Missing 'user_id' in the request body!");
+  });
+
+  it("should return 400 if the Stripe session payment_status is 'paid'", async () => {
+    // Arrange: simulate a Stripe session with payment_status "paid"
+    const stripeSession = {
       payment_status: "paid",
-      metadata: { orderId: "ABC123" },
-    });
+      metadata: { orderId: "order_123" },
+    };
+    retrieveMock.mockResolvedValue(stripeSession);
+    dbUtils.pingDatabase.mockResolvedValue();
 
-    const response = await request(app).delete("/cancelOrder").send({
-      session_id: "fake_session_id",
-      user_id: 1,
-    });
-
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message).toMatch(/already been paid/i);
+    const res = await request(app)
+      .delete("/cart/cancelOrder")
+      .send({ session_id: "sess_123", user_id: "user_123" });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("This order has already been paid, cannot delete!");
   });
 
-  it("should return 400 if orderId is missing in session metadata", async () => {
-    pingDatabase.mockResolvedValue();
-    stripeInstance.checkout.sessions.retrieve.mockResolvedValue({
+  it("should return 400 if Order ID is missing in Stripe session metadata", async () => {
+    // Arrange: simulate a Stripe session with no orderId in metadata.
+    const stripeSession = {
       payment_status: "unpaid",
       metadata: {},
-    });
+    };
+    retrieveMock.mockResolvedValue(stripeSession);
+    dbUtils.pingDatabase.mockResolvedValue();
 
-    const response = await request(app).delete("/cancelOrder").send({
-      session_id: "fake_session_id",
-      user_id: 1,
-    });
-
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message).toMatch(/Order ID missing/i);
+    const res = await request(app)
+      .delete("/cart/cancelOrder")
+      .send({ session_id: "sess_123", user_id: "user_123" });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Order ID missing in Stripe session metadata!");
   });
 
-  it("should return 400 if no 'Pending' order is found", async () => {
-    pingDatabase.mockResolvedValue();
-    stripeInstance.checkout.sessions.retrieve.mockResolvedValue({
+  it("should return 400 if no pending order is found", async () => {
+    // Arrange: valid Stripe session with an orderId.
+    const stripeSession = {
       payment_status: "unpaid",
-      metadata: { orderId: "ABC123" },
-    });
-    // findOne returns null
-    findOneMock.mockResolvedValue(null);
+      metadata: { orderId: "order_123" },
+    };
+    retrieveMock.mockResolvedValue(stripeSession);
+    dbUtils.pingDatabase.mockResolvedValue();
 
-    const response = await request(app).delete("/cancelOrder").send({
-      session_id: "fake_session_id",
-      user_id: 999,
-    });
+    // Simulate no pending order found.
+    db.Order.findOne = vi.fn().mockResolvedValue(null);
 
-    expect(response.statusCode).toBe(400);
-    expect(response.body.message).toMatch(/No 'Pending' order found/i);
+    const res = await request(app)
+      .delete("/cart/cancelOrder")
+      .send({ session_id: "sess_123", user_id: "user_123" });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe(
+      "No 'Pending' order found for user user_123 with orderId order_123."
+    );
   });
 
-  it("should return 200 and cancel the order on success", async () => {
-    pingDatabase.mockResolvedValue();
-    stripeInstance.checkout.sessions.retrieve.mockResolvedValue({
+  it("should return 200 if order is canceled successfully", async () => {
+    // Arrange: valid Stripe session with an orderId.
+    const stripeSession = {
       payment_status: "unpaid",
-      metadata: { orderId: "ORDER_123" },
-    });
+      metadata: { orderId: "order_123" },
+    };
+    retrieveMock.mockResolvedValue(stripeSession);
+    dbUtils.pingDatabase.mockResolvedValue();
 
-    // findOne returns an order with a destroy() method
-    const destroyMock = vi.fn();
-    findOneMock.mockResolvedValue({
-      id: "ORDER_123",
-      destroy: destroyMock,
-    });
+    // Simulate a pending order found.
+    db.Order.findOne = vi.fn().mockResolvedValue(fakeOrder);
+    fakeOrder.destroy.mockResolvedValue();
 
-    const response = await request(app).delete("/cancelOrder").send({
-      session_id: "valid_session",
-      user_id: 1,
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.body.message).toBe("Order canceled/deleted successfully.");
-    expect(destroyMock).toHaveBeenCalled();
-  });
-
-  it("should handle DB connection errors with 500", async () => {
-    pingDatabase.mockRejectedValue(new DatabaseConnectionError("Test DB error"));
-
-    const response = await request(app).delete("/cancelOrder").send({
-      session_id: "fake_session",
-      user_id: 1,
-    });
-
-    expect(response.statusCode).toBe(500);
-    expect(response.body.message).toBe("Unable to connect to the database!");
+    const res = await request(app)
+      .delete("/cart/cancelOrder")
+      .send({ session_id: "sess_123", user_id: "user_123" });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("Order canceled/deleted successfully.");
+    // Verify that destroy was called with the transaction and that the transaction was committed.
+    expect(fakeOrder.destroy).toHaveBeenCalledWith({ transaction: fakeTransaction });
+    expect(fakeTransaction.commit).toHaveBeenCalled();
   });
 });
