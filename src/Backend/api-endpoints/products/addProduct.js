@@ -25,7 +25,7 @@ import {
 		try {
 		  variations = JSON.parse(variations);
 		} catch (error) {
-		  console.error("Invalid JSON format for variations:", error);
+		//   console.error("Invalid JSON format for variations:", error);
 		  return res.status(400).json({ message: "Invalid variations format." });
 		}
 	  }
@@ -37,7 +37,7 @@ import {
 	  // Remove variations from productDetails to avoid confusion
 	  delete productDetails.variations;
   
-	  console.log("Product details being sent to the database:", productDetails);
+	  //console.log("Product details being sent to the database:", productDetails);
   
 	  // Add the product to the database
 	  const newProduct = await addProductToDB(productDetails);
@@ -63,8 +63,8 @@ import {
   
 	  // Prepare variations data by adding productId to each variation
 	  if (variations.length > 0) {
-		console.log("Type of variations:", typeof variations);
-		console.log("Variations data:", variations);
+		// console.log("Type of variations:", typeof variations);
+		// console.log("Variations data:", variations);
   
 		variations.forEach((variation) => {
 		  variation.productId = productId;

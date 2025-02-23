@@ -36,7 +36,7 @@ import {
 	  // If image changes, reconstruct imagesData
 	  if (productDetails.hasImageChanges === "true") {
 		const files = req.files;
-	  
+		
 		const names = Array.isArray(req.body.names) ? req.body.names : [req.body.names];
 		const keys = Array.isArray(req.body.keys) ? req.body.keys : [req.body.keys];
 	  
