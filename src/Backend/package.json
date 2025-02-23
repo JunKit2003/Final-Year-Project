@@ -5,7 +5,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "vitest",
+    "test": "vitest --reporter=json --outputFile=unit-test-results.json",
     "start": "node server",
     "dev": "nodemon server"
   },
