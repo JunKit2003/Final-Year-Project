@@ -34,7 +34,7 @@ const ManageOrders = () => {
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
   // Dropdown filter for Status
-  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("Paid");
 
   // Search Inputs
   const [typedUserId, setTypedUserId] = useState("");
@@ -50,10 +50,11 @@ const ManageOrders = () => {
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_HOST}/api/cart/getOrders`
       );
-
       const ordersFetched = response.data.orders || [];
       setOrders(ordersFetched);
-      setFilteredOrders(ordersFetched);
+      // Immediately filter for "Paid" status (assuming selectedStatus is "Paid")
+      const filtered = ordersFetched.filter(order => order.status === selectedStatus);
+      setFilteredOrders(filtered);
     } catch (error) {
       setSnackbarMessage(
         error.response?.data?.message || "Error fetching orders!"
@@ -64,6 +65,7 @@ const ManageOrders = () => {
       setLoading(false);
     }
   };
+  
 
   // Whenever selectedStatus, typedUserId, or typedRecipientName changes, re-filter the orders
   useEffect(() => {

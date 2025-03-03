@@ -4,9 +4,10 @@ import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory'; // Icon for 'Manage Products'
 import { useTheme } from '@mui/material/styles'; // Import Theme Hook
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
 const Sidebar = ({ setSelectedSection }) => {
-  const [activeSection, setActiveSection] = useState('Dashboard'); // Keep track of the active section
+  const [activeSection, setActiveSection] = useState('Manage products'); // Keep track of the active section
   const theme = useTheme(); // Get current theme (dark or light)
 
   const handleSectionClick = (section) => {
@@ -31,8 +32,8 @@ const Sidebar = ({ setSelectedSection }) => {
       <List>
         {/* Sidebar Items */}
         {[
-          { label: "Home", icon: <HomeIcon /> },
-          { label: "Dashboard", icon: <DashboardIcon /> },
+          { label: "Exit Admin Panel", icon: <ExitToAppIcon /> },
+          //{ label: "Dashboard", icon: <DashboardIcon /> },
           { label: "Manage Products", icon: <InventoryIcon /> },
           { label: "Manage Banners", icon: <InventoryIcon /> },
           { label: "Manage Orders", icon: <InventoryIcon /> },

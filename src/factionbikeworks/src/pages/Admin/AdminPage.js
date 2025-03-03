@@ -12,7 +12,7 @@ import axios from 'axios';
 
 const AdminPage = () => {
   const { goToHomePage } = useGlobalNavigation();
-  const [selectedSection, setSelectedSection] = useState('Dashboard');
+  const [selectedSection, setSelectedSection] = useState('Manage Products');
   const [isAuthorized, setIsAuthorized] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // Detect mobile view
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State for drawer toggle
@@ -75,8 +75,7 @@ const AdminPage = () => {
       )}
 
       <Box sx={{ flexGrow: 1, p: 3, width: '100%' }}>
-        {selectedSection === 'Home' && goToHomePage()}
-        {selectedSection === 'Dashboard' && <Dashboard />}
+        {selectedSection === 'Exit Admin Panel' && goToHomePage()}
         {selectedSection === 'Manage Products' && <ManageProducts />}
         {selectedSection === 'Manage Banners' && <ManageBanners />}
         {selectedSection === 'Manage Orders' && <ManageOrders />}

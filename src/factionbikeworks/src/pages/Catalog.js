@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer"; // Import Footer component
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Link, useParams } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -10,9 +10,13 @@ import {
   Button,
   CardMedia,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import { Link, useParams } from "react-router-dom";
-import axios from "axios";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 function Catalog() {
   const { brandname } = useParams(); // Capture the brand name from the route
@@ -85,15 +89,10 @@ function Catalog() {
   // 2. Brand filter from URL param (if present)
   // 3. Search term matching product name or brand
   const filteredProducts = products.filter((product) => {
-    // Category filter (if not "All")
     const matchCategory =
       selectedCategory === "All" || product.category === selectedCategory;
-
-    // Brand filter (if brandFilter is not empty)
     const matchBrand =
       !brandFilter || (product.brand && product.brand === brandFilter);
-
-    // Search term filter (match name or brand)
     const lowerSearch = searchTerm.toLowerCase();
     const matchSearch =
       product.name.toLowerCase().includes(lowerSearch) ||
@@ -110,41 +109,35 @@ function Catalog() {
 
       {/* Main Content Wrapper */}
       <Box sx={{ flex: 1 }}>
-        {/* Category Filter Section */}
+        {/* Filter Section */}
         <Box sx={{ padding: 4, bgcolor: "background.default", color: "text.primary" }}>
           <Typography variant="h4" align="center" gutterBottom>
             Shop by Categories
           </Typography>
-          <Grid container spacing={2} justifyContent="center">
-            <Grid item>
-              <Button
-                variant={selectedCategory === "All" ? "contained" : "outlined"}
-                onClick={() => setSelectedCategory("All")}
+          {/* Place category filter and search bar side by side */}
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 2, mt: 2 }}>
+            <FormControl variant="outlined" sx={{ minWidth: 200 }}>
+              <InputLabel id="category-select-label">Category</InputLabel>
+              <Select
+                labelId="category-select-label"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                label="Category"
               >
-                All
-              </Button>
-            </Grid>
-            {categories.map((category, index) => (
-              <Grid item key={index}>
-                <Button
-                  variant={selectedCategory === category ? "contained" : "outlined"}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </Button>
-              </Grid>
-            ))}
-          </Grid>
-
-          {/* Search Field */}
-          <Box sx={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                <MenuItem value="All">All</MenuItem>
+                {categories.map((category, index) => (
+                  <MenuItem key={index} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <TextField
               label="Search by product name or brand"
               variant="outlined"
               value={searchTerm}
               onChange={handleSearchChange}
-              fullWidth
-              sx={{ maxWidth: 400 }}
+              sx={{ maxWidth: 400, flexGrow: 1 }}
             />
           </Box>
         </Box>
@@ -171,7 +164,6 @@ function Catalog() {
                     style={{ textDecoration: "none" }}
                   >
                     <Card>
-                      {/* Show either the first image, or the default placeholder if none */}
                       <CardMedia
                         component="img"
                         height="200"
@@ -182,7 +174,7 @@ function Catalog() {
                       <CardContent>
                         <Typography variant="h5">{product.name}</Typography>
                         <Typography variant="body2" color="textSecondary">
-                          {product.description || "No description available"}
+                          {product.category || "No category available"}
                         </Typography>
                         <Typography variant="h6">
                           Starting from RM{minPrice}
@@ -197,7 +189,6 @@ function Catalog() {
         </Box>
       </Box>
 
-      {/* Footer Component */}
       <Footer />
     </div>
   );

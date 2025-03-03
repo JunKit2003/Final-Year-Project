@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
-import Footer from "../components/Footer"; // Import Footer
+import Footer from "../components/Footer";
 import {
   Box,
   Typography,
   Grid,
   Card,
   CardContent,
-  Button,
   CardMedia,
 } from "@mui/material";
 import Slider from "react-slick";
@@ -20,7 +19,6 @@ import { useTheme } from "@mui/material/styles";
 function Home() {
   const [images, setImages] = useState([]);
   const [brands, setBrands] = useState([]);
-  const [showAllBrands, setShowAllBrands] = useState(false);
   const theme = useTheme();
 
   useEffect(() => {
@@ -78,6 +76,7 @@ function Home() {
     autoplaySpeed: 3000,
   };
 
+  // Helper function to chunk brands into groups for the slider
   const chunkArray = (arr, size) => {
     const chunks = [];
     for (let i = 0; i < arr.length; i += size) {
@@ -97,7 +96,6 @@ function Home() {
   const brandChunks = chunkArray(brands, 6);
 
   return (
-    // OverflowX hidden to prevent horizontal scroll
     <div style={{ margin: 0, padding: 0, overflowX: "hidden" }}>
       <Header />
 
@@ -146,133 +144,62 @@ function Home() {
           Shop by Brands
         </Typography>
 
-        {!showAllBrands && (
-          <>
-            <Grid container spacing={4} columns={3}>
-              {brands.slice(0, 3).map((brand, index) => {
-                const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
-                return (
-                  <Grid item xs={1} key={brand.id || index}>
-                    <Link
-                      to={`/catalog/${brand.brandName}`}
-                      style={{ textDecoration: "none", color: "inherit" }}
-                    >
-                      <Card>
-                        {brand.imageUrl && (
-                          <CardMedia
-                            component="img"
-                            image={fullImageUrl}
-                            alt={brand.brandName}
+        {/* Always display the slider with all brand images */}
+        <Slider {...brandSliderSettings}>
+          {brandChunks.map((chunk, i) => (
+            <div key={i}>
+              <Grid container spacing={4} columns={3} sx={{ padding: 2 }}>
+                {chunk.map((brand, index) => {
+                  const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
+                  return (
+                    <Grid item xs={1} key={brand.id || index}>
+                      <Link
+                        to={`/catalog/${brand.brandName}`}
+                        style={{ textDecoration: "none", color: "inherit" }}
+                      >
+                        <Card>
+                          {brand.imageUrl && (
+                            <CardMedia
+                              component="img"
+                              image={fullImageUrl}
+                              alt={brand.brandName}
+                              sx={{
+                                height: { xs: 150, sm: 200 },
+                                objectFit: "contain",
+                              }}
+                            />
+                          )}
+                          <CardContent
                             sx={{
-                              height: { xs: 150, sm: 200 },
-                              objectFit: "contain",
-                            }}
-                          />
-                        )}
-                        <CardContent
-                          sx={{
-                            textAlign: "center",
-                            padding: { xs: 1, sm: 2 },
-                            pt: { xs: 0.5, sm: 2 },
-                          }}
-                        >
-                          <Typography
-                            variant="h6"
-                            component="div"
-                            sx={{
-                              fontSize: {
-                                xs: "0.9rem",
-                                sm: "1rem",
-                                md: "1.25rem",
-                              },
-                              mt: { xs: 0.5, sm: 1 },
+                              textAlign: "center",
+                              padding: { xs: 1, sm: 2 },
+                              pt: { xs: 0.5, sm: 2 },
                             }}
                           >
-                            {brand.brandName}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </Grid>
-                );
-              })}
-            </Grid>
-
-            {brands.length > 3 && (
-              <Box sx={{ textAlign: "center", marginTop: 2 }}>
-                <Button variant="contained" onClick={() => setShowAllBrands(true)}>
-                  Show More
-                </Button>
-              </Box>
-            )}
-          </>
-        )}
-
-        {showAllBrands && (
-          <>
-            <Slider {...brandSliderSettings}>
-              {brandChunks.map((chunk, i) => (
-                <div key={i}>
-                  <Grid container spacing={4} columns={3} sx={{ padding: 2 }}>
-                    {chunk.map((brand, index) => {
-                      const fullImageUrl = `${process.env.REACT_APP_BACKEND_HOST}${brand.imageUrl}`;
-                      return (
-                        <Grid item xs={1} key={brand.id || index}>
-                          <Link
-                            to={`/catalog/${brand.brandName}`}
-                            style={{ textDecoration: "none", color: "inherit" }}
-                          >
-                            <Card>
-                              {brand.imageUrl && (
-                                <CardMedia
-                                  component="img"
-                                  image={fullImageUrl}
-                                  alt={brand.brandName}
-                                  sx={{
-                                    height: { xs: 150, sm: 200 },
-                                    objectFit: "contain",
-                                  }}
-                                />
-                              )}
-                              <CardContent
-                                sx={{
-                                  textAlign: "center",
-                                  padding: { xs: 1, sm: 2 },
-                                  pt: { xs: 0.5, sm: 2 },
-                                }}
-                              >
-                                <Typography
-                                  variant="h6"
-                                  component="div"
-                                  sx={{
-                                    fontSize: {
-                                      xs: "0.9rem",
-                                      sm: "1rem",
-                                      md: "1.25rem",
-                                    },
-                                    mt: { xs: 0.5, sm: 1 },
-                                  }}
-                                >
-                                  {brand.brandName}
-                                </Typography>
-                              </CardContent>
-                            </Card>
-                          </Link>
-                        </Grid>
-                      );
-                    })}
-                  </Grid>
-                </div>
-              ))}
-            </Slider>
-
-            <Box sx={{ textAlign: "center", marginTop: 2 }}>
-              <Button variant="contained" onClick={() => setShowAllBrands(false)}>
-                Show Less
-              </Button>
-            </Box>
-          </>
-        )}
+                            <Typography
+                              variant="h6"
+                              component="div"
+                              sx={{
+                                fontSize: {
+                                  xs: "0.9rem",
+                                  sm: "1rem",
+                                  md: "1.25rem",
+                                },
+                                mt: { xs: 0.5, sm: 1 },
+                              }}
+                            >
+                              {brand.brandName}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </div>
+          ))}
+        </Slider>
       </Box>
 
       <Box sx={{ width: "100%", margin: 0, padding: 0 }}>

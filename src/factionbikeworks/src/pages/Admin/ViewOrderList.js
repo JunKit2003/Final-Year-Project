@@ -137,11 +137,10 @@ const ViewOrderList = () => {
 
       await axios.patch(
         `${process.env.REACT_APP_BACKEND_HOST}/api/cart/fulfillOrders/${order.id}`,
-        {}, // PATCH requires a body, even if empty
-        { withCredentials: true } // Ensures session cookies are sent
+        {},
+        { withCredentials: true }
       );
       
-
       // Update state to "Completed"
       setOrder({ ...order, status: "Completed" });
     } catch (err) {
@@ -161,7 +160,7 @@ const ViewOrderList = () => {
     window.location.href = "/admin";
   };
 
-  // Render order info
+  // Render order info with image left and details to the right
   return (
     <Box sx={{ p: 3 }}>
       {/* Back to Admin Button */}
@@ -176,17 +175,16 @@ const ViewOrderList = () => {
       <Box sx={{ mt: 2 }}>
         <Typography>Order ID: {order.id}</Typography>
         <Typography>User ID: {order.userId}</Typography>
-
-        {/* Display the recipientName if present */}
         {order.recipientName && (
           <Typography>Recipient Name: {order.recipientName}</Typography>
         )}
-
         <Typography>Shipping Address: {order.shippingAddress}</Typography>
+        {order.phoneNumber && (
+          <Typography>Phone Number: {order.phoneNumber}</Typography>
+        )}
         <Typography>Total: RM{order.totalAmount}</Typography>
         <Typography>Status: {order.status}</Typography>
 
-        {/* If status is "Paid", show a "Complete Order" button */}
         {order.status === "Paid" && (
           <Button
             variant="contained"
@@ -213,43 +211,49 @@ const ViewOrderList = () => {
             const variation = getVariationDetails(item.variationId);
             return (
               <Paper key={item.id} sx={{ p: 2, mt: 1 }}>
-                <Typography>ID: {item.id}</Typography>
-                <Typography>Variation ID: {item.variationId}</Typography>
-                <Typography>Quantity: {item.quantity}</Typography>
-                <Typography>Unit Price: RM{item.price}</Typography>
-
-                {variation ? (
-                  <>
-                    <Typography>
-                      Product Name: {variation.productName}
-                    </Typography>
-                    <Typography>Brand: {variation.productBrand}</Typography>
-                    <Typography>
-                      Variation Name: {variation.variationName}
-                    </Typography>
-                    <Typography>
-                      Variation Price: RM{variation.variationPrice}
-                    </Typography>
-                    {variation.images.length > 0 && (
-                      <Box sx={{ mt: 1 }}>
-                        <Typography>Images:</Typography>
-                        {variation.images.map((imgUrl, idx) => (
-                          <Box
-                            key={idx}
-                            component="img"
-                            src={imgUrl}
-                            alt="Variation"
-                            sx={{ maxWidth: 100, m: 1 }}
-                          />
-                        ))}
-                      </Box>
+                <Box sx={{ display: "flex", alignItems: "flex-start" }}>
+                  {/* Left: Image */}
+                  <Box sx={{ width: 120, height: 120, mr: 2 }}>
+                    {variation && variation.images && variation.images.length > 0 ? (
+                      <img
+                        src={variation.images[0]}
+                        alt="Variation"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <Typography>No Image</Typography>
                     )}
-                  </>
-                ) : (
-                  <Typography color="error">
-                    Could not find product data for variation ID {item.variationId}
-                  </Typography>
-                )}
+                  </Box>
+                  {/* Right: Details */}
+                  <Box>
+                    <Typography>ID: {item.id}</Typography>
+                    <Typography>Variation ID: {item.variationId}</Typography>
+                    <Typography>Quantity: {item.quantity}</Typography>
+                    <Typography>Unit Price: RM{item.price}</Typography>
+                    {variation ? (
+                      <>
+                        <Typography>
+                          Product Name: {variation.productName}
+                        </Typography>
+                        <Typography>Brand: {variation.productBrand}</Typography>
+                        <Typography>
+                          Variation Name: {variation.variationName}
+                        </Typography>
+                        <Typography>
+                          Variation Price: RM{variation.variationPrice}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography color="error">
+                        Could not find product data for variation ID {item.variationId}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
               </Paper>
             );
           })

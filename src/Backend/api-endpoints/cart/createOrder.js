@@ -16,13 +16,14 @@ export default async function createOrder(req, res) {
     // 1) Ping DB
     await pingDatabase();
 
-    // 2) Extract data including recipient_name (if you made it required)
+    // 2) Extract data including recipient_name and phoneNumber
     const {
       user_id,
       items,
       shipping_address,
       total_amount,
       recipient_name, // NEW
+      phoneNumber,    // NEW: Extract phone number from request body
     } = req.body;
 
     // 3) Validate input
@@ -39,17 +40,20 @@ export default async function createOrder(req, res) {
       throw new InputValidationError("Missing 'total_amount' in the request body!");
     }
     if (!recipient_name) {
-      // or if you want to allow optional, remove this check
       throw new InputValidationError("Missing 'recipient_name' in the request body!");
     }
+    if (!phoneNumber) {  // NEW validation
+      throw new InputValidationError("Missing 'phoneNumber' in the request body!");
+    }
 
-    // 4) Create the Order row
+    // 4) Create the Order row, including phoneNumber
     const newOrder = await db.Order.create(
       {
         userId: user_id,
         shippingAddress: shipping_address,
         totalAmount: total_amount,
         recipientName: recipient_name, // NEW
+        phoneNumber: phoneNumber,        // NEW
         status: "Pending",
       },
       { transaction }
@@ -93,7 +97,6 @@ export default async function createOrder(req, res) {
       });
     }
 
-
     const FRONTEND_URL = `${process.env.HOST}:${process.env.PORT_FRONTEND}`;
 
     // 6) Create Stripe Checkout Session
@@ -109,7 +112,7 @@ export default async function createOrder(req, res) {
       },
     });
 
-    // Commit
+    // Commit transaction
     await transaction.commit();
 
     // 7) Return sessionId

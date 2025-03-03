@@ -10,7 +10,7 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import axios from "../AxiosSingleton";
 import Header from "../components/Header"; 
-import Footer from "../components/Footer"; // ✅ Import Footer component
+import Footer from "../components/Footer";
 
 function Signup() {
   const [firstName, setFirstName] = useState("");
@@ -57,7 +57,11 @@ function Signup() {
       }
     } catch (error) {
       if (error.response) {
-        setErrorMessage(error.response.data.message || "Signup failed!");
+        const errData = error.response.data;
+        const errorMsg = errData.errors
+          ? errData.errors.join(", ")
+          : errData.message || "Signup failed!";
+        setErrorMessage(errorMsg);
         setSuccessMessage("");
       } else {
         setErrorMessage("Signup failed: Network error.");
@@ -170,7 +174,6 @@ function Signup() {
                 Sign Up
               </Button>
             </form>
-            {/* Login Link */}
             <Typography variant="body2" align="center" sx={{ marginTop: 2 }}>
               Already have an account?{" "}
               <Link

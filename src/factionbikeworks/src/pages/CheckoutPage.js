@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { loadStripe } from "@stripe/stripe-js";
 import Header from "../components/Header";
-import Footer from "../components/Footer"; // ✅ Import Footer component
+import Footer from "../components/Footer";
 import {
   Box,
   Typography,
@@ -18,8 +18,20 @@ const CheckoutPage = () => {
   const [sessionUser, setSessionUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
+
+  // Detailed address fields
+  // NEW: Added Unit Number field
+  const [addressUnit, setAddressUnit] = useState("");
+  const [addressStreet, setAddressStreet] = useState("");
+  const [addressCity, setAddressCity] = useState("");
+  const [addressState, setAddressState] = useState("");
+  const [addressPostalCode, setAddressPostalCode] = useState("");
+  const [addressCountry, setAddressCountry] = useState("");
+
+  // NEW: Phone number
+  const [phoneNumber, setPhoneNumber] = useState("");
+
   const [recipientName, setRecipientName] = useState("");
-  const [address, setAddress] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -106,10 +118,25 @@ const CheckoutPage = () => {
       alert("Please enter a recipient name.");
       return;
     }
-    if (!address.trim()) {
-      alert("Please enter a shipping address.");
+
+    // Check if all address fields are filled (modify validations as needed)
+    if (
+      !addressUnit.trim() ||
+      !addressStreet.trim() ||
+      !addressCity.trim() ||
+      !addressState.trim() ||
+      !addressPostalCode.trim() ||
+      !addressCountry.trim()
+    ) {
+      alert("Please fill in all address fields.");
       return;
     }
+
+    if (!phoneNumber.trim()) {
+      alert("Please enter your phone number.");
+      return;
+    }
+
     if (!sessionUser || !sessionUser.id) {
       alert("User is not authenticated. Please log in.");
       return;
@@ -119,10 +146,14 @@ const CheckoutPage = () => {
       setLoading(true);
       setError("");
 
+      // Combine address fields into one string including Unit Number
+      const fullAddress = `${addressUnit}, ${addressStreet}, ${addressPostalCode} ${addressCity}, ${addressState}, ${addressCountry}`;
+
       const payload = {
         user_id: sessionUser.id,
         recipient_name: recipientName,
-        shipping_address: address,
+        shipping_address: fullAddress,
+        phoneNumber: phoneNumber,
         items: cartItems.map((item) => ({
           variation_id: item.variation.id,
           quantity: item.quantity,
@@ -148,7 +179,7 @@ const CheckoutPage = () => {
         throw new Error("Stripe failed to initialize. Please try again.");
       }
 
-      // Redirect to Stripe Checkout
+      // For a "payment failed" redirect, ensure your backend sets the proper cancel_url.
       await stripe.redirectToCheckout({ sessionId: response.data.sessionId });
     } catch (error) {
       console.error("Error placing order:", error);
@@ -162,7 +193,16 @@ const CheckoutPage = () => {
     return (
       <>
         <Header />
-        <Box sx={{ p: 4, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <Box
+          sx={{
+            p: 4,
+            textAlign: "center",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
           <Typography variant="h6">Authenticating user...</Typography>
         </Box>
         <Footer />
@@ -174,8 +214,19 @@ const CheckoutPage = () => {
     return (
       <>
         <Header />
-        <Box sx={{ p: 4, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <Typography variant="h6">No selected items found in your cart.</Typography>
+        <Box
+          sx={{
+            p: 4,
+            textAlign: "center",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
+          <Typography variant="h6">
+            No selected items found in your cart.
+          </Typography>
         </Box>
         <Footer />
       </>
@@ -209,25 +260,87 @@ const CheckoutPage = () => {
           />
         </Paper>
 
+        {/* Detailed Address Section */}
         <Paper sx={{ p: 2, mb: 2 }}>
           <Typography variant="h6">Shipping Address</Typography>
+          {/* NEW: Unit Number Field */}
           <TextField
             fullWidth
-            label="Shipping Address"
+            label="Unit Number"
             variant="outlined"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            value={addressUnit}
+            onChange={(e) => setAddressUnit(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Street"
+            variant="outlined"
+            value={addressStreet}
+            onChange={(e) => setAddressStreet(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="City"
+            variant="outlined"
+            value={addressCity}
+            onChange={(e) => setAddressCity(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="State"
+            variant="outlined"
+            value={addressState}
+            onChange={(e) => setAddressState(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Postal Code"
+            variant="outlined"
+            value={addressPostalCode}
+            onChange={(e) => setAddressPostalCode(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Country"
+            variant="outlined"
+            value={addressCountry}
+            onChange={(e) => setAddressCountry(e.target.value)}
             margin="normal"
           />
         </Paper>
 
+        {/* Phone Number Section */}
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6">Contact Phone Number</Typography>
+          <TextField
+            fullWidth
+            label="Phone Number"
+            variant="outlined"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            margin="normal"
+          />
+        </Paper>
+
+        {/* Order Summary */}
         <Paper sx={{ p: 2, mb: 2 }}>
           <Typography variant="h6">Order Summary</Typography>
           {cartItems.map((item) => (
             <Grid container key={item.id} spacing={1}>
-              <Grid item xs={6}>{item.variation.product.name}</Grid>
-              <Grid item xs={3}>x{item.quantity}</Grid>
-              <Grid item xs={3}>RM{item.variation.price * item.quantity}</Grid>
+              <Grid item xs={6}>
+                {item.variation.product.name}
+              </Grid>
+              <Grid item xs={3}>
+                x{item.quantity}
+              </Grid>
+              <Grid item xs={3}>
+                RM{item.variation.price * item.quantity}
+              </Grid>
             </Grid>
           ))}
           <Divider sx={{ my: 2 }} />
@@ -251,6 +364,3 @@ const CheckoutPage = () => {
 };
 
 export default CheckoutPage;
-
-
-// Add a feature where if a user clicks on previous link while paying on stripe, it redirects them to payment failed page 

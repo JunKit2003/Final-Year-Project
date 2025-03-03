@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header";
-import Footer from "../components/Footer"; // Import Footer component
 import {
   Box,
   Paper,
@@ -14,6 +12,38 @@ import {
   Checkbox,
   FormControlLabel,
 } from "@mui/material";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+
+// Helper Component: ProductImage
+const ProductImage = ({ productId, sku, fallbackUrl, style }) => {
+  const possibleExtensions = [".jpg", ".png", ".jpeg", ".gif", ".webp", ];
+  const [extIndex, setExtIndex] = useState(0);
+
+  // Construct base URL without extension
+  const baseUrl = `${process.env.REACT_APP_BACKEND_HOST}/images/product_images/${productId}/${sku}/image_1`;
+
+  const handleError = () => {
+    // If there are more extensions to try, move to the next one
+    if (extIndex < possibleExtensions.length - 1) {
+      setExtIndex(extIndex + 1);
+    }
+  };
+
+  return (
+    <img
+      src={baseUrl + possibleExtensions[extIndex]}
+      onError={handleError}
+      alt="Product"
+      style={style}
+      // If all extensions fail, the browser will display a broken image.
+      // You could add additional logic to display fallbackUrl if needed.
+      onLoad={(e) => {
+        // Optional: if image loads, nothing to do.
+      }}
+    />
+  );
+};
 
 const Cart = () => {
   const [sessionUser, setSessionUser] = useState(null);
@@ -22,6 +52,7 @@ const Cart = () => {
   const [selectAll, setSelectAll] = useState(false);
 
   const navigate = useNavigate();
+  const defaultImageUrl = "https://via.placeholder.com/300";
 
   useEffect(() => {
     const authenticateUser = async () => {
@@ -74,7 +105,11 @@ const Cart = () => {
       setSelectedItems([]);
     } else {
       const availableItems = cartItems
-        .filter((item) => item.variation?.stock > 0 && item.quantity <= item.variation?.stock)
+        .filter(
+          (item) =>
+            item.variation?.stock > 0 &&
+            item.quantity <= item.variation?.stock
+        )
         .map((item) => item.id);
       setSelectedItems(availableItems);
     }
@@ -142,7 +177,7 @@ const Cart = () => {
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
       <Box
         sx={{
@@ -170,64 +205,107 @@ const Cart = () => {
             const isOutOfStock = variation.stock === 0;
             const exceedsStock = item.quantity > variation.stock;
 
+            // Build image URL using product.id and variation.sku with fallback handled in ProductImage
             return (
               <Grid item xs={12} md={6} key={item.id}>
                 <Paper
                   elevation={3}
                   sx={{
-                    bgcolor: isOutOfStock || exceedsStock ? "grey.300" : "background.paper",
+                    bgcolor:
+                      isOutOfStock || exceedsStock
+                        ? "grey.300"
+                        : "background.paper",
                     opacity: isOutOfStock || exceedsStock ? 0.5 : 1,
                   }}
                 >
                   <Card
                     sx={{
-                      bgcolor: isOutOfStock || exceedsStock ? "grey.300" : "background.paper",
+                      bgcolor:
+                        isOutOfStock || exceedsStock
+                          ? "grey.300"
+                          : "background.paper",
                     }}
                   >
                     <CardContent>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={selectedItems.includes(item.id)}
-                            onChange={() =>
-                              handleSelectItem(item.id, variation.stock, item.quantity)
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        {/* Left: Image using ProductImage component */}
+                        <Box sx={{ width: 120, height: 120, mr: 2 }}>
+                          {product.id && variation.sku ? (
+                            <ProductImage
+                              productId={product.id}
+                              sku={variation.sku}
+                              fallbackUrl={defaultImageUrl}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                bgcolor: "#eee",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Typography>No Image</Typography>
+                            </Box>
+                          )}
+                        </Box>
+                        {/* Right: Details */}
+                        <Box>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={selectedItems.includes(item.id)}
+                                onChange={() =>
+                                  handleSelectItem(
+                                    item.id,
+                                    variation.stock,
+                                    item.quantity
+                                  )
+                                }
+                                disabled={isOutOfStock || exceedsStock}
+                              />
                             }
-                            disabled={isOutOfStock || exceedsStock}
+                            label="Select"
                           />
-                        }
-                        label="Select"
-                      />
-                      <Typography variant="h6">
-                        {product.name || "Unnamed Product"}
-                      </Typography>
-                      <Typography variant="body1">
-                        Price: RM{variation.price}
-                      </Typography>
-                      <Typography variant="body2">
-                        Quantity: {item.quantity}
-                      </Typography>
-                      <Typography variant="body2">
-                        Variation: {variation.name || "N/A"}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color={isOutOfStock || exceedsStock ? "error" : "textPrimary"}
-                      >
-                        {isOutOfStock
-                          ? "Out of Stock"
-                          : exceedsStock
-                          ? `Only ${variation.stock} available!`
-                          : "In Stock"}
-                      </Typography>
-
-                      <Button
-                        variant="contained"
-                        color="error"
-                        sx={{ mt: 2 }}
-                        onClick={() => handleRemove(item.id)}
-                      >
-                        Remove
-                      </Button>
+                          <Typography variant="h6">
+                            {product.name || "Unnamed Product"}
+                          </Typography>
+                          <Typography variant="body1">
+                            Price: RM{variation.price}
+                          </Typography>
+                          <Typography variant="body2">
+                            Quantity: {item.quantity}
+                          </Typography>
+                          <Typography variant="body2">
+                            Variation: {variation.name || "N/A"}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color={isOutOfStock || exceedsStock ? "error" : "textPrimary"}
+                          >
+                            {isOutOfStock
+                              ? "Out of Stock"
+                              : exceedsStock
+                              ? `Only ${variation.stock} available!`
+                              : "In Stock"}
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            color="error"
+                            sx={{ mt: 2 }}
+                            onClick={() => handleRemove(item.id)}
+                          >
+                            Remove
+                          </Button>
+                        </Box>
+                      </Box>
                     </CardContent>
                   </Card>
                 </Paper>
@@ -247,10 +325,8 @@ const Cart = () => {
           </Button>
         </Box>
       </Box>
-
-      {/* Footer Component */}
       <Footer />
-    </div>
+    </Box>
   );
 };
 

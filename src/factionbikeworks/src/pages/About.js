@@ -82,7 +82,7 @@ function About() {
                 <strong>Store Operating Hours:</strong>
               </Typography>
               <Typography variant="body2">Weekdays: 11:00am - 7:30pm</Typography>
-              <Typography variant="body2">Saturday: 9:00am - 4:00pm</Typography>
+              <Typography variant="body2">Saturday: 11:00am - 4:00pm</Typography>
               <Typography variant="body2">Closed on Sunday and Public Holidays, Gone Riding!</Typography>
             </Grid>
           </Grid>

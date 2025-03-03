@@ -25,7 +25,6 @@ export default (sequelize, DataTypes) => {
           },
         },
       },
-
       // NEW FIELD: Recipient Name
       recipientName: {
         type: DataTypes.STRING,
@@ -38,13 +37,22 @@ export default (sequelize, DataTypes) => {
         // optionally, if you prefer snake_case in your DB table:
         // field: "recipient_name",
       },
-
       shippingAddress: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           notEmpty: {
             msg: "Shipping address cannot be empty",
+          },
+        },
+      },
+      // NEW FIELD: Phone Number
+      phoneNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notEmpty: {
+            msg: "Phone number cannot be empty",
           },
         },
       },
@@ -83,13 +91,13 @@ export default (sequelize, DataTypes) => {
 
   // Associations
   Order.associate = (models) => {
-    // 1) Each Order belongs to exactly one User (Account).
+    // Each Order belongs to exactly one User (Account).
     Order.belongsTo(models.Account, {
       foreignKey: "userId",
       as: "user",
     });
 
-    // 2) Each Order can have many OrderItems.
+    // Each Order can have many OrderItems.
     Order.hasMany(models.OrderItem, {
       foreignKey: "orderId",
       as: "items",

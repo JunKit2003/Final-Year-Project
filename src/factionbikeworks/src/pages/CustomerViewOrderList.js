@@ -117,7 +117,16 @@ const CustomerViewOrderList = () => {
   // Loading State
   if (loading) {
     return (
-      <Box sx={{ p: 3, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <Box
+        sx={{
+          p: 3,
+          textAlign: "center",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
         <Typography variant="h5">Loading order details...</Typography>
       </Box>
     );
@@ -126,8 +135,19 @@ const CustomerViewOrderList = () => {
   // Error State
   if (error) {
     return (
-      <Box sx={{ p: 3, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <Typography variant="h5" color="error">{error}</Typography>
+      <Box
+        sx={{
+          p: 3,
+          textAlign: "center",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
+        <Typography variant="h5" color="error">
+          {error}
+        </Typography>
       </Box>
     );
   }
@@ -135,13 +155,24 @@ const CustomerViewOrderList = () => {
   // No Order Found
   if (!order) {
     return (
-      <Box sx={{ p: 3, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <Typography variant="h5" color="error">Order not found.</Typography>
+      <Box
+        sx={{
+          p: 3,
+          textAlign: "center",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
+        <Typography variant="h5" color="error">
+          Order not found.
+        </Typography>
       </Box>
     );
   }
 
-  // Render Read-Only Order Details
+  // Render Read-Only Order Details with Redesigned Items
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
@@ -156,7 +187,12 @@ const CustomerViewOrderList = () => {
           <Typography>Status: {order.status}</Typography>
           <Typography>Total Amount: RM{order.totalAmount}</Typography>
           <Typography>Shipping Address: {order.shippingAddress}</Typography>
-          {order.recipientName && <Typography>Recipient: {order.recipientName}</Typography>}
+          {order.phoneNumber && (
+            <Typography>Phone Number: {order.phoneNumber}</Typography>
+          )}
+          {order.recipientName && (
+            <Typography>Recipient: {order.recipientName}</Typography>
+          )}
 
           <Typography variant="h6" sx={{ mt: 3 }}>
             Items:
@@ -164,40 +200,63 @@ const CustomerViewOrderList = () => {
           {order.items && order.items.length > 0 ? (
             order.items.map((item) => {
               const variation = getVariationDetails(item.variationId);
+              // Calculate total for this item
+              const itemTotal = (item.price * item.quantity).toFixed(2);
 
               return (
-                <Paper key={item.id} sx={{ p: 2, my: 1 }}>
-                  <Typography>Item ID: {item.id}</Typography>
-                  <Typography>Variation ID: {item.variationId}</Typography>
-                  <Typography>Quantity: {item.quantity}</Typography>
-                  <Typography>Price: RM{item.price}</Typography>
-
-                  {variation ? (
-                    <>
-                      <Typography>Product Name: {variation.productName}</Typography>
-                      <Typography>Brand: {variation.productBrand}</Typography>
-                      <Typography>Variation Name: {variation.variationName}</Typography>
-                      <Typography>Variation Price: RM{variation.variationPrice}</Typography>
-                      {variation.images.length > 0 && (
-                        <Box sx={{ mt: 1 }}>
-                          <Typography>Images:</Typography>
-                          {variation.images.map((imgUrl, idx) => (
-                            <Box
-                              key={idx}
-                              component="img"
-                              src={imgUrl}
-                              alt="Variation"
-                              sx={{ maxWidth: 100, m: 1 }}
-                            />
-                          ))}
-                        </Box>
-                      )}
-                    </>
+                <Paper
+                  key={item.id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    p: 2,
+                    my: 1,
+                  }}
+                >
+                  {/* Left: Image */}
+                  {variation && variation.images && variation.images.length > 0 ? (
+                    <Box sx={{ width: 120, height: 120, mr: 2 }}>
+                      <img
+                        src={variation.images[0]}
+                        alt="Product"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Box>
                   ) : (
-                    <Typography color="error">
-                      Could not find product data for variation ID {item.variationId}
-                    </Typography>
+                    <Box
+                      sx={{
+                        width: 120,
+                        height: 120,
+                        mr: 2,
+                        bgcolor: "#eee",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Typography>No Image</Typography>
+                    </Box>
                   )}
+
+                  {/* Right: Details */}
+                  <Box>
+                    <Typography variant="subtitle1">
+                      Product Name: {variation ? variation.productName : "N/A"}
+                    </Typography>
+                    <Typography variant="subtitle1">
+                      Variation: {variation ? variation.variationName : "N/A"}
+                    </Typography>
+                    <Typography variant="subtitle1">
+                      Quantity: {item.quantity}
+                    </Typography>
+                    <Typography variant="subtitle1">
+                      Amount Paid: RM{itemTotal}
+                    </Typography>
+                  </Box>
                 </Paper>
               );
             })
