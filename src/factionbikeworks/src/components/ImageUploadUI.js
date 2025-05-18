@@ -1,0 +1,229 @@
+import React, { useState, useEffect } from "react";
+import {
+	Box,
+	Button,
+	TextField,
+	IconButton,
+	Checkbox,
+	FormControlLabel,
+	Typography,
+	Fab,
+} from "@mui/material";
+import { Cancel as CancelIcon, Add as AddIcon } from "@mui/icons-material";
+
+const ImageUploadUI = ({
+	variations = [], // Default to an empty array
+	existingImagesData = {}, // Default to an empty object
+	handleClose,
+	handleSave,
+}) => {
+	const [selectedVariations, setSelectedVariations] = useState([]);
+	const [images, setImages] = useState({});
+
+	 // Function to convert URL to File object
+	const urlToFile = async (url, fileName) => {
+		try {
+		  const response = await fetch(url);
+		  const blob = await response.blob();
+		  return new File([blob], fileName, { type: blob.type });
+		} catch (error) {
+		  console.error(`Error converting URL to File:`, error);
+		  return null;
+		}
+	};
+
+	// Load existing images on component mount or when existingImagesData changes
+	useEffect(() => {
+		const loadExistingImages = async () => {
+		  if (Object.keys(existingImagesData).length > 0) {
+			const convertedImagesData = {};
+			
+			for (const [sku, data] of Object.entries(existingImagesData)) {
+			  const filePromises = data.files.map((url, index) => 
+				urlToFile(url, data.names[index])
+			  );
+			  
+			  try {
+				const convertedFiles = await Promise.all(filePromises);
+				const validFiles = convertedFiles.filter(file => file !== null);
+				
+				if (validFiles.length > 0) {
+				  convertedImagesData[sku] = {
+					files: validFiles,
+					names: validFiles.map(file => file.name)
+				  };
+				}
+			  } catch (error) {
+				console.error(`Error converting files for SKU ${sku}:`, error);
+			  }
+			}
+	
+			console.log("Converted images data:", convertedImagesData);
+			setImages(convertedImagesData);
+			setSelectedVariations(Object.keys(convertedImagesData));
+		  }
+		};
+	
+		loadExistingImages();
+	  }, [existingImagesData]);
+
+	// Toggle variation selection
+	const handleVariationToggle = (sku) => {
+		setSelectedVariations((prev) =>
+			prev.includes(sku) ? prev.filter((v) => v !== sku) : [...prev, sku]
+		);
+	};
+
+	// Handle file upload: Add new images to the existing ones
+	const handleFileChange = (sku, event) => {
+		const newFiles = Array.from(event.target.files);
+		
+		setImages((prevImages) => {
+		  const existingFiles = prevImages[sku]?.files || [];
+		  const existingNames = prevImages[sku]?.names || [];
+		  
+		  return {
+			...prevImages,
+			[sku]: {
+			  files: [...existingFiles, ...newFiles],
+			  names: [...existingNames, ...newFiles.map(file => file.name)]
+			}
+		  };
+		});
+	};
+
+	// Remove an image by index
+	const handleRemoveImage = (sku, index) => {
+		setImages((prevImages) => {
+			const updatedFiles = prevImages[sku].files.filter((_, i) => i !== index);
+			const updatedNames = prevImages[sku].names.filter((_, i) => i !== index);
+
+			return {
+				...prevImages,
+				[sku]: {
+					files: updatedFiles,
+					names: updatedNames,
+				},
+			};
+		});
+	};
+
+	// Save the updated images data
+	const saveImages = () => {
+		handleSave(images);
+		handleClose();
+	};
+
+	return (
+		<Box sx={{ p: 3 }}>
+			<Typography variant="h6" sx={{ mb: 2 }}>
+				Upload Images for Variations
+			</Typography>
+
+			{variations.map((variation) => (
+				<Box key={variation.sku} sx={{ mb: 4 }}>
+					<FormControlLabel
+						control={
+							<Checkbox
+								checked={selectedVariations.includes(variation.sku)}
+								onChange={() => handleVariationToggle(variation.sku)}
+							/>
+						}
+						label={`Upload Images for ${variation.name} (sku: ${variation.sku})`}
+					/>
+
+					{selectedVariations.includes(variation.sku) && (
+						<Box sx={{ mt: 2, ml: 4 }}>
+							<Box
+								sx={{
+									display: "flex",
+									flexWrap: "wrap",
+									gap: 2,
+									mt: 2,
+								}}
+							>
+								{images[variation.sku]?.files.map((file, index) => (
+									<Box
+										key={index}
+										sx={{
+											width: "100px",
+											height: "160px",
+											display: "flex",
+											flexDirection: "column",
+											alignItems: "center",
+											border: "1px solid lightgrey",
+											borderRadius: "8px",
+											p: 1,
+										}}
+									>
+										<Box
+											component="img"
+											src={
+												file instanceof File
+													? URL.createObjectURL(file)
+													: file
+											}
+											alt={`Preview of ${file.name || "uploaded image"}`}
+											sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+										/>
+
+										<TextField
+											label="Image Name"
+											value={images[variation.sku]?.names[index] || ""}
+											onChange={(e) =>
+												setImages((prevImages) => ({
+													...prevImages,
+													[variation.sku]: {
+														...prevImages[variation.sku],
+														names: prevImages[variation.sku].names.map(
+															(name, i) => (i === index ? e.target.value : name)
+														),
+													},
+												}))
+											}
+											sx={{ mb: 1, width: "100%" }}
+										/>
+
+										<IconButton
+											size="small"
+											onClick={() => handleRemoveImage(variation.sku, index)}
+										>
+											<CancelIcon fontSize="small" />
+										</IconButton>
+									</Box>
+								))}
+							</Box>
+
+							<Box sx={{ mt: 2, textAlign: "center" }}>
+								<input
+									type="file"
+									accept="image/*"
+									style={{ display: "none" }}
+									id={`file-upload-${variation.sku}`}
+									multiple
+									onChange={(e) => handleFileChange(variation.sku, e)}
+								/>
+								<label htmlFor={`file-upload-${variation.sku}`}>
+									<Fab color="primary" component="span" size="small">
+										<AddIcon />
+									</Fab>
+								</label>
+							</Box>
+						</Box>
+					)}
+				</Box>
+			))}
+
+			<Box sx={{ mt: 4, display: "flex", justifyContent: "space-between" }}>
+				<Button onClick={handleClose} variant="outlined">
+					Close
+				</Button>
+				<Button onClick={saveImages} variant="contained">
+					Save Images
+				</Button>
+			</Box>
+		</Box>
+	);
+};
+
+export default ImageUploadUI;
