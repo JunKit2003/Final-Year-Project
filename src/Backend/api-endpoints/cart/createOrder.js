@@ -1,4 +1,4 @@
-import Stripe from "stripe";
+import { getStripe } from "../../config/stripe.js";
 import {
   pingDatabase,
   DatabaseConnectionError,
@@ -7,9 +7,16 @@ import {
 } from "../../database/utils.js";
 import { db } from "../../database/index.js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function createOrder(req, res) {
+  // Before opening a DB transaction: no Stripe key means no payments (503), not a crash.
+  let stripe;
+  try {
+    stripe = getStripe();
+  } catch (error) {
+    return res.status(503).json({ message: error.message });
+  }
+
   const transaction = await db.sequelize.transaction();
 
   try {
@@ -97,11 +104,16 @@ export default async function createOrder(req, res) {
       });
     }
 
-    const FRONTEND_URL = `${process.env.HOST}:${process.env.PORT_FRONTEND}`;
+    // Where Stripe sends the shopper back. PUBLIC_URL is the site origin behind nginx
+    // (e.g. https://faction.junkit.work); unset keeps the old HOST:PORT_FRONTEND form.
+    const FRONTEND_URL = (
+      process.env.PUBLIC_URL || `${process.env.HOST}:${process.env.PORT_FRONTEND}`
+    ).replace(/\/+$/, "");
 
     // 6) Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      // payment_method_types was removed in API 2026-09-30.endive (400 if sent).
+      allowed_payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
       success_url: `${FRONTEND_URL}/paymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
@@ -116,7 +128,9 @@ export default async function createOrder(req, res) {
     await transaction.commit();
 
     // 7) Return sessionId
-    return res.status(200).json({ sessionId: session.id });
+    // url: Stripe-hosted checkout page. Stripe.js redirectToCheckout is gone in current
+    // Stripe.js, so the frontend redirects to this instead.
+    return res.status(200).json({ sessionId: session.id, url: session.url });
   } catch (error) {
     await transaction.rollback();
 

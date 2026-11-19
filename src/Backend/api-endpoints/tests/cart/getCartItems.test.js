@@ -26,7 +26,7 @@ const app = express();
 app.use(express.json());
 
 // Note the `?` to allow for an optional param so we can test "missing" param scenario
-app.get("/getCartItems/:user_id?", (req, res) => getCartItems(req, res));
+app.get("/getCartItems{/:user_id}", (req, res) => getCartItems(req, res));
 
 // 4️⃣ **Ensure database is ready before running tests**
 beforeAll(async () => {

@@ -35,8 +35,10 @@ export default async function login(req, res) {
             throw new InputValidationError("Invalid email/username or password.");
         }
 
-        // Save user info in session
-        req.session.user = {
+        // New session id at sign-in (blocks session fixation), and wait until the store has
+        // saved it before replying: replying first let the next request arrive before the
+        // session existed, so it was treated as signed out.
+        const sessionUser = {
             id: user.id,
             first_name: user.first_name,
             last_name: user.last_name,
@@ -44,29 +46,13 @@ export default async function login(req, res) {
             username: user.username,
             category: user.category,
         };
+        await new Promise((resolve, reject) => req.session.regenerate((err) => (err ? reject(err) : resolve())));
+        req.session.user = sessionUser;
+        await new Promise((resolve, reject) => req.session.save((err) => (err ? reject(err) : resolve())));
 
-        // Ensure to save the session after setting user info
-        // req.session.save((err) => {
-        //     if (err) {
-        //         console.error("Session save error:", err);
-        //         return res.status(500).send({ message: "Internal server error", error: err });
-        //     }
-
-        //     // Send success response
-        //     res.status(200).json({
-        //         message: "Login successful!",
-        //         user: req.session.user, // Return the session user data
-        //     });
-        // });
-
-        req.session.save()
-
-        // console.log("Session after login")
-        // console.log(req.session)
-
-        res.status(200).json({
+        return res.status(200).json({
             message: "Login successful!",
-            user: req.session.user, // Return the session user data
+            user: sessionUser,
         });
 
     } catch (error) {

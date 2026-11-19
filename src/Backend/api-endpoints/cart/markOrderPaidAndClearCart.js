@@ -1,4 +1,4 @@
-import Stripe from "stripe";
+import { getStripe } from "../../config/stripe.js";
 import {
   pingDatabase,
   DatabaseConnectionError,
@@ -8,9 +8,16 @@ import {
 import { db } from "../../database/index.js";
 import { Op } from "sequelize"; // Import Op from Sequelize
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function markOrderPaidAndClearCart(req, res) {
+  // Before opening a DB transaction: no Stripe key means no payments (503), not a crash.
+  let stripe;
+  try {
+    stripe = getStripe();
+  } catch (error) {
+    return res.status(503).json({ message: error.message });
+  }
+
   const transaction = await db.sequelize.transaction();
 
   try {
