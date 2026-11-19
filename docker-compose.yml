@@ -1,0 +1,91 @@
+# Faction Bikeworks: MySQL + Express API + nginx-served storefront.
+#   cp .env.example .env   # fill in secrets
+#   docker compose up -d --build
+#   open http://localhost:8080
+name: faction
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-faction}
+      MYSQL_USER: ${DB_USER:-faction}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in .env}
+      TZ: Asia/Kuala_Lumpur
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      # Ping as the app user so "healthy" means the app can actually log in.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u\"$$MYSQL_USER\" -p\"$$MYSQL_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./src/Backend
+      secrets: [npm_ca]
+    image: ${IMAGE_PREFIX:-faction}-backend:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE: ${DB_NAME:-faction}
+      DATABASE_USERNAME: ${DB_USER:-faction}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      HOST_DATABASE: db
+      DATABASE_PORT: 3306
+      PORT_SERVER: 8000
+      HOST: http://backend
+      # Public site origin: Stripe sends shoppers back here after checkout.
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
+      # "" = same-origin image URLs (/images/...), served through the frontend's nginx.
+      ASSET_BASE_URL: ""
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      # First admin on an empty database (ignored once any account exists).
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      # nginx (and any proxy in front of it) sit on private networks.
+      TRUST_PROXY: uniquelocal
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_SECURE: ${EMAIL_SECURE:-false}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+    volumes:
+      # Named volume: first start copies the bundled images in; uploads persist across rebuilds.
+      - images:/app/images
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: ./src/factionbikeworks
+      secrets: [npm_ca]
+    image: ${IMAGE_PREFIX:-faction}-frontend:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+
+volumes:
+  db-data:
+  images:
+
+secrets:
+  # Extra CA certs for `npm ci` behind a TLS-inspecting proxy. Point NPM_CA_FILE at a PEM bundle
+  # (e.g. /etc/ssl/certs/ca-certificates.crt); unset uses an empty file and changes nothing.
+  npm_ca:
+    file: ${NPM_CA_FILE:-/dev/null}
