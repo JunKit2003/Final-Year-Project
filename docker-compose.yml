@@ -60,6 +60,8 @@ services:
       EMAIL_SECURE: ${EMAIL_SECURE:-false}
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_TEST_TO: ${EMAIL_TEST_TO:-}
     volumes:
       # Named volume: first start copies the bundled images in; uploads persist across rebuilds.
       - images:/app/images

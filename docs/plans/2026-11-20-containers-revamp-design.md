@@ -26,11 +26,11 @@ Acceptance spec: [containers-revamp-spec.md](../containers-revamp-spec.md)
 **Out of scope**
 - Admin feature changes (only the upgrade fixes needed to keep it running).
 - Database migrations or a seed dump (none exists in the repo).
-- Moving the live site at faction.junkit.work (its hosting isn't in the repo).
+- Provisioning the VM for bikeshop.junkit.my (handled separately; this PR ships everything it needs).
 
 **Definition of Done**
 - `docker compose up` gives a working shop on a fresh machine.
-- Backend 108/108 and frontend 15/15 tests pass; lint passes with zero warnings.
+- Backend 111/111 and frontend 15/15 tests pass; lint passes with zero warnings.
 - A push to `main` can deploy with no manual step once the VM is set up, and a failed health check rolls back.
 
 **Also in this delivery**

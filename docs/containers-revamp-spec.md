@@ -301,7 +301,7 @@ Feature: Locked down
 
 ## Shared technical completion checks
 
-- Backend `npx vitest run` (108 tests) and frontend `npm test` (15 tests) pass; `npm run lint` passes with zero warnings.
+- Backend `npx vitest run` (111 tests) and frontend `npm test` (15 tests) pass; `npm run lint` passes with zero warnings.
 - `actionlint` and `shellcheck` pass on the workflow and `deploy/deploy.sh`.
 - No secret values in images, logs or the repo; `.env` is gitignored.
 - `docker compose config` validates with `.env.example`.

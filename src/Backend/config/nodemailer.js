@@ -19,3 +19,7 @@ export const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
+
+// Sender for all mail. Must be a sender verified with the SMTP provider (Brevo).
+// Read at call time: ESM imports run before dotenv.config().
+export const mailFrom = () => process.env.EMAIL_FROM || '"Faction Bikeworks" <noreply@junkit.work>';
