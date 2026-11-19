@@ -40,4 +40,4 @@ cd src/factionbikeworks && npm run lint && npm test && npm run build
 
 ### Deploying
 
-`.github/workflows/ci-cd.yml` tests every PR, builds images to GHCR, and deploys `main` to a VM once enabled. Setup and rollback: [docs/deploy-vm-setup.md](docs/deploy-vm-setup.md). Design and acceptance spec: [docs/](docs/).
+`.github/workflows/ci-cd.yml` tests every PR, builds images to GHCR, and deploys `main` to a VM once enabled. Setup and rollback: [docs/deploy-vm-setup.md](docs/deploy-vm-setup.md). Server handoff checklist for bikeshop.junkit.my: [docs/VM-AGENT-HANDOFF.md](docs/VM-AGENT-HANDOFF.md). Design and acceptance spec: [docs/](docs/).
