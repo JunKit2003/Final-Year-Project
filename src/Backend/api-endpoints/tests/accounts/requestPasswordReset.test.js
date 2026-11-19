@@ -11,6 +11,8 @@ vi.mock("../../../config/nodemailer.js", () => {
     transporter: {
       sendMail: vi.fn(),
     },
+    // config/nodemailer.js now also exports the configurable sender.
+    mailFrom: () => '"Faction Bikeworks" <noreply@junkit.work>',
   };
 });
 

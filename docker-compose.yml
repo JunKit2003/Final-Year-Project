@@ -1,4 +1,4 @@
-# Faction Bikeworks: MySQL + Express API + nginx-served storefront.
+# Faction Bikeworks: MySQL + Express API and storefront.
 #   cp .env.example .env   # fill in secrets
 #   docker compose up -d --build
 #   open http://localhost:8080
@@ -27,7 +27,8 @@ services:
 
   backend:
     build:
-      context: ./src/Backend
+      context: ./src
+      dockerfile: Backend/Dockerfile
       secrets: [npm_ca]
     image: ${IMAGE_PREFIX:-faction}-backend:${IMAGE_TAG:-local}
     restart: unless-stopped
@@ -44,13 +45,13 @@ services:
       HOST: http://backend
       # Public site origin: Stripe sends shoppers back here after checkout.
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8080}
-      # "" = same-origin image URLs (/images/...), served through the frontend's nginx.
+      # "" = same-origin image URLs (/images/...), served by Express.
       ASSET_BASE_URL: ""
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
       # First admin on an empty database (ignored once any account exists).
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
-      # nginx (and any proxy in front of it) sit on private networks.
+      # Trust the host reverse proxy on the Docker network.
       TRUST_PROXY: uniquelocal
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
@@ -60,25 +61,13 @@ services:
       EMAIL_SECURE: ${EMAIL_SECURE:-false}
       EMAIL_USER: ${EMAIL_USER:-}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_TEST_TO: ${EMAIL_TEST_TO:-}
     volumes:
       # Named volume: first start copies the bundled images in; uploads persist across rebuilds.
       - images:/app/images
-    expose:
-      - "8000"
-
-  frontend:
-    build:
-      context: ./src/factionbikeworks
-      secrets: [npm_ca]
-    image: ${IMAGE_PREFIX:-faction}-frontend:${IMAGE_TAG:-local}
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-    environment:
-      BACKEND_URL: http://backend:8000
     ports:
-      - "${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+      - "${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:8000"
 
 volumes:
   db-data:

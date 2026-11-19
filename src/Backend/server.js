@@ -1,4 +1,5 @@
 import express from 'express';
+import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
@@ -44,7 +45,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Behind nginx (containers / production): trust X-Forwarded-* so req.secure and
+// Behind host Nginx in production: trust X-Forwarded-* so req.secure and
 // the Secure session cookie work over HTTPS.
 if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
 
@@ -95,7 +96,22 @@ sessionStore.sync();
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api', appRoutes);
-app.use('/images', express.static('images'));
+app.use('/images', express.static('images', { maxAge: '7d' }));
+
+if (process.env.SERVE_STOREFRONT === 'true') {
+  const storefront = fileURLToPath(new URL('./storefront/', import.meta.url));
+  app.use('/assets', express.static(fileURLToPath(new URL('./storefront/assets/', import.meta.url)), {
+    maxAge: '1y',
+    immutable: true,
+  }));
+  const shellCache = { 'Cache-Control': 'no-cache' };
+  app.use(express.static(storefront, {
+    setHeaders: (res) => res.set(shellCache),
+  }));
+  app.get(/^\/(?!api(?:\/|$)|images(?:\/|$)|assets(?:\/|$)).*$/, (req, res) => {
+    res.sendFile('index.html', { root: storefront, headers: shellCache, cacheControl: false });
+  });
+}
 
 const PORT = process.env.PORT_SERVER || 8000;
 app.listen(PORT, (error) => {

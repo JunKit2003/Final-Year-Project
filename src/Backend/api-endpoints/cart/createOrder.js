@@ -105,7 +105,7 @@ export default async function createOrder(req, res) {
     }
 
     // Where Stripe sends the shopper back. PUBLIC_URL is the site origin behind nginx
-    // (e.g. https://faction.junkit.work); unset keeps the old HOST:PORT_FRONTEND form.
+    // (e.g. https://bikeshop.junkit.my); unset keeps the old HOST:PORT_FRONTEND form.
     const FRONTEND_URL = (
       process.env.PUBLIC_URL || `${process.env.HOST}:${process.env.PORT_FRONTEND}`
     ).replace(/\/+$/, "");

@@ -1,10 +1,11 @@
 # VM setup, deploy and rollback
 
-One-time setup so `.github/workflows/ci-cd.yml` can deploy the containers to your VM. Same SSH pattern as the Portfolio and ConsignCars sites, but the VM runs Docker images pulled from GHCR instead of static files.
+One-time setup so `.github/workflows/ci-cd.yml` can deploy the containers to your VM. Same SSH pattern as the Portfolio and ConsignCars sites, but the VM runs a Docker app image pulled from GHCR instead of static files.
 
 ```
 /opt/faction/
   docker-compose.yml   uploaded by every deploy
+  bikeshop.junkit.my.conf uploaded by every deploy
   deploy.sh            uploaded by every deploy
   set-admin-password.sh  uploaded by every deploy
   .env                 yours: secrets, never in git
@@ -45,29 +46,24 @@ sudo chown deploy:deploy /home/deploy/.ssh/authorized_keys && sudo chmod 600 /ho
 Copy `.env.example` from the repo to `/opt/faction/.env` and fill it in:
 
 - `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `SESSION_SECRET` (`openssl rand -hex 32`).
-- `PUBLIC_URL=https://faction.junkit.work` (Stripe returns shoppers here), `COOKIE_SECURE=true` behind HTTPS.
-- `STRIPE_SECRET_KEY` (test key first), `EMAIL_*` for password reset codes.
+- `PUBLIC_URL=https://bikeshop.junkit.my` (Stripe returns shoppers here), `COOKIE_SECURE=true` behind HTTPS.
+- `STRIPE_SECRET_KEY` (test key first), `EMAIL_*` for password reset codes, and `EMAIL_FROM` set to a sender verified with your SMTP provider (defaults to `noreply@junkit.work`).
 - `HTTP_BIND=127.0.0.1` and `HTTP_PORT=8080`, then point the VM's existing nginx (or Cloudflare tunnel) at `http://127.0.0.1:8080`, forwarding `X-Forwarded-Proto`.
 
 ```bash
 sudo chown deploy:deploy /opt/faction/.env && sudo chmod 600 /opt/faction/.env
 ```
 
-Example host nginx server block:
+Install the [bike shop virtual host](../deploy/nginx/bikeshop.junkit.my.conf) on the VM:
 
-```nginx
-server {
-    server_name faction.junkit.work;
-    # ...existing listen 443 ssl / certificate lines...
-    client_max_body_size 100m;
-    location / {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+```bash
+sudo install -m 0644 /opt/faction/bikeshop.junkit.my.conf /etc/nginx/sites-available/bikeshop.junkit.my
+sudo ln -s /etc/nginx/sites-available/bikeshop.junkit.my /etc/nginx/sites-enabled/bikeshop.junkit.my
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d bikeshop.junkit.my
 ```
+
+If a Cloudflare Tunnel terminates TLS, configure trusted HTTPS forwarding at host Nginx before enabling `COOKIE_SECURE`.
 
 ## 4. GitHub secrets and the switch
 
@@ -81,7 +77,7 @@ Repo > Settings > Secrets and variables > Actions.
 | `DEPLOY_SSH_KEY` | secret | contents of `faction_deploy` (private key) |
 | `DEPLOY_KNOWN_HOSTS` | secret | output of `ssh-keyscan` below, fingerprint verified |
 | `DEPLOY_PATH` | variable | optional, defaults to `/opt/faction` |
-| `DEPLOY_ENABLED` | variable | `true` to turn deploys on |
+| `DEPLOY_ENABLED` | variable | `true` to enable deploys on pushes to `main` |
 
 ```bash
 ssh-keyscan -p <port> -t ed25519 <vm-host> > known_hosts.txt
@@ -98,7 +94,7 @@ The deploy job uses the `production` environment, so you can add required review
 
 ## 5. First deploy
 
-Push to `main` (or run **CI/CD** by hand). The job uploads `docker-compose.yml` and `deploy.sh`, logs the VM into GHCR with the job's short-lived token, pulls `:<sha>`, starts it and waits for health checks.
+Run **CI/CD** on `main` with **Deploy this main build to production** selected. With `DEPLOY_ENABLED=true`, a push to `main` also deploys automatically. The job uploads the Compose file, deploy scripts, and host Nginx config, logs the VM into GHCR with the job's short-lived token, pulls `:<sha>`, starts it and waits for health checks.
 
 On a fresh database the API creates one account, `Admin`. Its password is `ADMIN_INITIAL_PASSWORD` from `.env`, or, if that's empty, a random one printed once in `docker compose logs backend`. Set `ADMIN_EMAIL` to a real inbox so "Forgot password" works for it. To change the password at any time:
 
@@ -106,7 +102,7 @@ On a fresh database the API creates one account, `Admin`. Its password is `ADMIN
 cd /opt/faction && bash set-admin-password.sh        # prompts twice, hashes with the API's bcrypt
 ```
 
-**Existing install (faction.junkit.work):** the old code seeded `Admin` / `admin` and the README published it. Run `set-admin-password.sh` on that server now, even before moving it to containers.
+**Old install (faction.junkit.work, if still running):** the old code seeded `Admin` / `admin` and the README published it. Run `set-admin-password.sh` on that server now, even before moving it to containers.
 
 ## 6. Rollback
 
@@ -118,7 +114,7 @@ tail -5 .deploy-history                     # pick a previous SHA
 echo <ghcr-token> | bash deploy.sh /opt/faction ghcr.io/junkit2003/final-year-project <sha> <github-user>
 ```
 
-Any `:<sha>` still in GHCR can be redeployed. Database and images stay on their volumes.
+Use a tag built with the single-image setup. To roll back across the migration from two images, restore the Compose file and deploy script from the earlier release first. Database and images stay on their volumes.
 
 ## 7. Backups
 
@@ -129,7 +125,7 @@ docker run --rm -v faction_images:/data -v "$PWD":/out alpine tar czf /out/image
 
 ## 8. Troubleshooting
 
-- **Deploy job skipped:** `DEPLOY_ENABLED` is not `true`, or the run isn't on `main`.
+- **Deploy job skipped:** Check that the run is on `main`. For a push, set `DEPLOY_ENABLED=true`. For a manual run, select **Deploy this main build to production**.
 - **Host key verification failed:** `DEPLOY_KNOWN_HOSTS` is stale or missing the `[host]:port` form.
 - **`denied` pulling from ghcr.io:** the package isn't linked to this repo. Packages > package settings > Manage Actions access > add this repository.
 - **`.env is missing`:** create `/opt/faction/.env` (section 3).
