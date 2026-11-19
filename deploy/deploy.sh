@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs on the VM (called by the CI/CD workflow over SSH):
 #   bash deploy.sh <dir> <image-prefix> <tag> <ghcr-user>   (GHCR token on stdin)
-# Pulls the tagged images, restarts the stack, waits for health, and rolls back on failure.
+# Pulls the tagged app image, restarts the stack, waits for health, and rolls back on failure.
 set -euo pipefail
 
 die() { echo "deploy: $*" >&2; exit 1; }
@@ -26,8 +26,8 @@ compose() { IMAGE_PREFIX="$prefix" IMAGE_TAG="$1" docker compose --env-file .env
 
 previous="$(cat .deployed-tag 2>/dev/null || true)"
 
-echo "Pulling $prefix-{backend,frontend}:$tag"
-compose "$tag" pull backend frontend
+echo "Pulling $prefix-backend:$tag"
+compose "$tag" pull backend
 
 echo "Starting $tag"
 if compose "$tag" up -d --no-build --remove-orphans --wait --wait-timeout 180; then

@@ -1,10 +1,11 @@
 # VM setup, deploy and rollback
 
-One-time setup so `.github/workflows/ci-cd.yml` can deploy the containers to your VM. Same SSH pattern as the Portfolio and ConsignCars sites, but the VM runs Docker images pulled from GHCR instead of static files.
+One-time setup so `.github/workflows/ci-cd.yml` can deploy the containers to your VM. Same SSH pattern as the Portfolio and ConsignCars sites, but the VM runs a Docker app image pulled from GHCR instead of static files.
 
 ```
 /opt/faction/
   docker-compose.yml   uploaded by every deploy
+  bikeshop.junkit.my.conf uploaded by every deploy
   deploy.sh            uploaded by every deploy
   set-admin-password.sh  uploaded by every deploy
   .env                 yours: secrets, never in git
@@ -53,21 +54,16 @@ Copy `.env.example` from the repo to `/opt/faction/.env` and fill it in:
 sudo chown deploy:deploy /opt/faction/.env && sudo chmod 600 /opt/faction/.env
 ```
 
-Ready-made host config: [`deploy/nginx/bikeshop.junkit.my.conf`](../deploy/nginx/bikeshop.junkit.my.conf) (HTTP block; `certbot --nginx -d bikeshop.junkit.my` adds HTTPS). Equivalent server block:
+Install the [bike shop virtual host](../deploy/nginx/bikeshop.junkit.my.conf) on the VM:
 
-```nginx
-server {
-    server_name bikeshop.junkit.my;
-    # ...existing listen 443 ssl / certificate lines...
-    client_max_body_size 100m;
-    location / {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+```bash
+sudo install -m 0644 /opt/faction/bikeshop.junkit.my.conf /etc/nginx/sites-available/bikeshop.junkit.my
+sudo ln -s /etc/nginx/sites-available/bikeshop.junkit.my /etc/nginx/sites-enabled/bikeshop.junkit.my
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d bikeshop.junkit.my
 ```
+
+If a Cloudflare Tunnel terminates TLS, configure trusted HTTPS forwarding at host Nginx before enabling `COOKIE_SECURE`.
 
 ## 4. GitHub secrets and the switch
 
@@ -98,7 +94,7 @@ The deploy job uses the `production` environment, so you can add required review
 
 ## 5. First deploy
 
-Push to `main` (or run **CI/CD** by hand). The job uploads `docker-compose.yml` and `deploy.sh`, logs the VM into GHCR with the job's short-lived token, pulls `:<sha>`, starts it and waits for health checks.
+Push to `main` (or run **CI/CD** by hand). The job uploads the Compose file, deploy scripts, and host Nginx config, logs the VM into GHCR with the job's short-lived token, pulls `:<sha>`, starts it and waits for health checks.
 
 On a fresh database the API creates one account, `Admin`. Its password is `ADMIN_INITIAL_PASSWORD` from `.env`, or, if that's empty, a random one printed once in `docker compose logs backend`. Set `ADMIN_EMAIL` to a real inbox so "Forgot password" works for it. To change the password at any time:
 
@@ -118,7 +114,7 @@ tail -5 .deploy-history                     # pick a previous SHA
 echo <ghcr-token> | bash deploy.sh /opt/faction ghcr.io/junkit2003/final-year-project <sha> <github-user>
 ```
 
-Any `:<sha>` still in GHCR can be redeployed. Database and images stay on their volumes.
+Use a tag built with the single-image setup. To roll back across the migration from two images, restore the Compose file and deploy script from the earlier release first. Database and images stay on their volumes.
 
 ## 7. Backups
 

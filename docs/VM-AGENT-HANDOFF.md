@@ -2,25 +2,20 @@
 
 For whoever sets up the server. The app side is finished and merged; this is only the VM and GitHub settings. Background and troubleshooting: [deploy-vm-setup.md](deploy-vm-setup.md).
 
-## Where things stand (2026-11-20)
+## Before deploying
 
-- `main` is at `632df27`. CI is green.
-- Images are already in GHCR:
-  - `ghcr.io/junkit2003/final-year-project-backend:632df27dea02` (also `:latest`)
-  - `ghcr.io/junkit2003/final-year-project-frontend:632df27dea02` (also `:latest`)
-- The **Deploy to VM** job exists but is skipped until the repo variable `DEPLOY_ENABLED=true` is set.
-- Nothing is running on the VM yet. The old site at faction.junkit.work is a separate, older install.
+- Wait for CI to publish the app image to `ghcr.io/junkit2003/final-year-project-backend`.
+- The **Deploy to VM** job runs after the repository variable `DEPLOY_ENABLED` is set to `true` and the SSH settings below are in place.
 
 ## What runs on the VM
 
 ```
 host nginx :443  (bikeshop.junkit.my, TLS via certbot)
-  -> 127.0.0.1:8080  frontend container (nginx: SPA + proxies /api, /images)
-       -> backend container :8000 (Express API, not published)
-            -> db container (MySQL 8.4, not published)
+  -> 127.0.0.1:8080  -> backend container :8000 (Express storefront, API, and images)
+                         -> db container (MySQL 8.4, not published)
 ```
 
-Files in `/opt/faction`: `docker-compose.yml`, `deploy.sh` and `set-admin-password.sh`, which every deploy uploads, plus `.env`, which **you** create. Data lives in the Docker volumes `faction_db-data` and `faction_images`.
+Files in `/opt/faction`: `docker-compose.yml`, `deploy.sh`, `set-admin-password.sh`, and `bikeshop.junkit.my.conf`, which every deploy uploads, plus `.env`, which **you** create. Data lives in the Docker volumes `faction_db-data` and `faction_images`.
 
 ## Steps
 
@@ -102,7 +97,7 @@ Then delete the local private key.
 
 ### 6. First deploy
 
-Actions > **CI/CD** > Run workflow on `main` (or push to `main`). The deploy job runs `deploy.sh`, which pulls the `:<sha>` images, starts the stack and waits up to 3 minutes for health checks. If a release is unhealthy it starts the previous tag again and fails the job.
+Actions > **CI/CD** > Run workflow on `main` (or push to `main`). The deploy job runs `deploy.sh`, which pulls the app image for the commit, starts the stack and waits up to 3 minutes for health checks. If a release is unhealthy it starts the previous tag again and fails the job.
 
 If the pull is denied, go to GitHub > Packages > each `final-year-project-*` package > Package settings > Manage Actions access, and add this repository with read access.
 
