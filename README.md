@@ -22,7 +22,7 @@ docker compose up -d --build --wait
 open http://localhost:8080
 ```
 
-MySQL, the API and the storefront run as three containers; only the storefront publishes a port. Data and uploaded images live in Docker volumes. Add a Stripe test key (`STRIPE_SECRET_KEY=sk_test_...`) to enable checkout.
+MySQL and Express run in two containers. Express serves the storefront and API on one published port. Data and uploaded images live in Docker volumes. Add a Stripe test key (`STRIPE_SECRET_KEY=sk_test_...`) to enable checkout.
 
 ### Without Docker
 
@@ -40,4 +40,4 @@ cd src/factionbikeworks && npm run lint && npm test && npm run build
 
 ### Deploying
 
-`.github/workflows/ci-cd.yml` tests every PR, builds images to GHCR, and deploys `main` to a VM once enabled. Setup and rollback: [docs/deploy-vm-setup.md](docs/deploy-vm-setup.md). Server handoff checklist for bikeshop.junkit.my: [docs/VM-AGENT-HANDOFF.md](docs/VM-AGENT-HANDOFF.md). Design and acceptance spec: [docs/](docs/).
+`.github/workflows/ci-cd.yml` tests every PR, builds and pushes the app image to GHCR, and deploys `main` to a VM once enabled. Setup and rollback: [docs/deploy-vm-setup.md](docs/deploy-vm-setup.md). Server handoff checklist for bikeshop.junkit.my: [docs/VM-AGENT-HANDOFF.md](docs/VM-AGENT-HANDOFF.md). Design and acceptance spec: [docs/](docs/).

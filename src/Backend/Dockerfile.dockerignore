@@ -1,0 +1,10 @@
+**/node_modules
+**/.env
+**/.env.*
+**/npm-debug.log
+factionbikeworks/build
+factionbikeworks/dist
+Backend/api-endpoints/tests
+Backend/generateTestReport.js
+Backend/unit-test-report.pdf
+Backend/unit-test-results.json
