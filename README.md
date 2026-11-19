@@ -4,7 +4,7 @@
 
 The full e-commerce website is available at:
 
-**[https://faction.junkit.work](https://faction.junkit.work)**
+**[https://bikeshop.junkit.my](https://bikeshop.junkit.my)**
 
 Please visit the live site to see all features and functionality in action.
 
