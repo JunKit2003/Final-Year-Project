@@ -36,13 +36,13 @@ vi.mock("../../../database/index.js", () => ({
 // 2️⃣ **Mock Stripe to avoid real API calls**
 vi.mock("stripe", () => {
   return {
-    default: vi.fn().mockImplementation(() => ({
+    default: vi.fn().mockImplementation(function () { return {
       checkout: {
         sessions: {
           retrieve: (...args) => stripeRetrieveMock(...args),
         },
       },
-    })),
+    }; }),
   };
 });
 

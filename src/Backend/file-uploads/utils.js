@@ -1,10 +1,16 @@
 import fs from "fs";
 import path from "path";
 
+// Public base for image URLs. Read at call time (ESM imports run before dotenv.config()).
+// ASSET_BASE_URL="" gives same-origin relative URLs ("/images/..."), which is what the
+// containers use behind nginx. Unset keeps the old absolute HOST:PORT_SERVER form.
+const assetBase = () =>
+	process.env.ASSET_BASE_URL ?? `${process.env.HOST}:${process.env.PORT_SERVER}`;
+
 async function getImageUrlDataForProduct(productId, skus) {
 	const imagesData = {};
   
-	const baseImageUrl = `${process.env.HOST}:${process.env.PORT_SERVER}/images/product_images/${productId}`;
+	const baseImageUrl = `${assetBase()}/images/product_images/${productId}`;
 	// console.log(baseImageUrl);
   
 	for (const sku of skus) {
@@ -48,7 +54,7 @@ async function getImageUrlDataForProduct(productId, skus) {
 		imagesData[color] = {
 		  files: files.map(
 			(file) =>
-			  `${process.env.HOST}:${process.env.PORT_SERVER}/${imageFolderPath}/${color}/${file}`
+			  `${assetBase()}/${imageFolderPath}/${color}/${file}`
 		  ),
 		  names: files,
 		};

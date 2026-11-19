@@ -1,5 +1,5 @@
 // controllers/cart/cancelOrder.js
-import Stripe from "stripe";
+import { getStripe } from "../../config/stripe.js";
 import {
   pingDatabase,
   DatabaseConnectionError,
@@ -8,9 +8,16 @@ import {
 } from "../../database/utils.js";
 import { db } from "../../database/index.js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function cancelOrder(req, res) {
+  // Before opening a DB transaction: no Stripe key means no payments (503), not a crash.
+  let stripe;
+  try {
+    stripe = getStripe();
+  } catch (error) {
+    return res.status(503).json({ message: error.message });
+  }
+
     //console.log(">>>> Inside cancelOrder controller, request body:", req.body);
   const transaction = await db.sequelize.transaction();
 

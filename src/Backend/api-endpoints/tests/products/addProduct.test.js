@@ -13,11 +13,11 @@ vi.mock("../../../database/utils.js", () => ({
   addVariationsToDB: vi.fn(),
 }));
 
-vi.mock("../../file-uploads/utils.js", () => ({
+vi.mock("../../../file-uploads/utils.js", () => ({
   reconstructImagesData: vi.fn(),
 }));
 
-vi.mock("../../file-uploads/uploadProductImages.js", () => ({
+vi.mock("../../../file-uploads/uploadProductImages.js", () => ({
   __esModule: true,
   default: vi.fn(),
 }));
@@ -30,8 +30,8 @@ import {
   addProductToDB,
   addVariationsToDB,
 } from "../../../database/utils.js";
-import { reconstructImagesData } from "../../file-uploads/utils.js";
-import uploadProductImages from "../../file-uploads/uploadProductImages.js";
+import { reconstructImagesData } from "../../../file-uploads/utils.js";
+import uploadProductImages from "../../../file-uploads/uploadProductImages.js";
 import addProduct from "../../products/addProduct.js"; // Adjust path as needed
 
 // 3️⃣ Setup a minimal Express app

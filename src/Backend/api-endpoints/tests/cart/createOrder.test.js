@@ -40,12 +40,12 @@ vi.mock("../../../database/index.js", () => ({
 // 2️⃣ **Mock Stripe to avoid real API calls**
 vi.mock("stripe", () => {
   return {
-    default: vi.fn().mockImplementation(() => {
+    default: vi.fn().mockImplementation(function () {
       return {
         checkout: {
           sessions: {
             create: vi.fn(() =>
-              Promise.resolve({ id: "test_session_id" })
+              Promise.resolve({ id: "test_session_id", url: "https://checkout.stripe.com/c/pay/test_session_id" })
             ),
           },
         },
@@ -83,6 +83,7 @@ describe("POST /createOrder API Tests", () => {
       shipping_address: "123 Test St",
       total_amount: 100,
       recipient_name: "John Doe",
+      phoneNumber: "0123456789",
     };
 
     const response = await request(app)
@@ -105,6 +106,7 @@ describe("POST /createOrder API Tests", () => {
       shipping_address: "123 Test St",
       total_amount: 100,
       recipient_name: "John Doe",
+      phoneNumber: "0123456789",
     };
 
     const response = await request(app)
@@ -151,6 +153,7 @@ describe("POST /createOrder API Tests", () => {
       shipping_address: "123 Test St",
       total_amount: 100,
       recipient_name: "John Doe",
+      phoneNumber: "0123456789",
     };
 
     const response = await request(app)
@@ -181,6 +184,7 @@ describe("POST /createOrder API Tests", () => {
       shipping_address: "123 Test St",
       total_amount: 100,
       recipient_name: "John Doe",
+      phoneNumber: "0123456789",
     };
 
     const response = await request(app)
@@ -189,5 +193,6 @@ describe("POST /createOrder API Tests", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toHaveProperty("sessionId", "test_session_id");
+    expect(response.body).toHaveProperty("url", "https://checkout.stripe.com/c/pay/test_session_id");
   });
 });

@@ -24,7 +24,7 @@ const app = express();
 app.use(express.json());
 
 // Define route with optional param so we can test "missing" param scenario
-app.delete("/cartItem/:cart_item_id?", (req, res) => removeCartItem(req, res));
+app.delete("/cartItem{/:cart_item_id}", (req, res) => removeCartItem(req, res));
 
 // 4️⃣ No DB setup/teardown needed unless your project requires it
 //    If you need real DB connections, do them in beforeAll/afterAll.

@@ -7,7 +7,7 @@ import { Sequelize } from 'sequelize';
 
 // dotenv congifuration
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ quiet: true });
 
 
 import { initializeDatabase } from './startup.js';
@@ -15,6 +15,7 @@ import { initializeDatabase } from './startup.js';
 // Initialize Sequelize with additional options
 const sequelize = new Sequelize(process.env.DATABASE, process.env.DATABASE_USERNAME, process.env.DATABASE_PASSWORD, {
   host: process.env.HOST_DATABASE,
+  port: Number(process.env.DATABASE_PORT) || 3306,
   dialect: 'mysql',
   logging: false, // Toggle to true for SQL logs
   dialectOptions: {

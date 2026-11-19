@@ -55,7 +55,7 @@ app.use((req, res, next) => {
   next();
 });
 // Register route. Use an optional route parameter to test missing orderId.
-app.patch("/cart/fulfillOrders/:orderId?", (req, res) => fulfillOrder(req, res));
+app.patch("/cart/fulfillOrders{/:orderId}", (req, res) => fulfillOrder(req, res));
 
 // ───────────────────────────────────────────────
 // 4️⃣ Write the Tests

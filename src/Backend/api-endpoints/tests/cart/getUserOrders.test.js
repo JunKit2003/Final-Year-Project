@@ -27,7 +27,7 @@ const app = express();
 app.use(express.json());
 
 // Route defined with an optional param (`:userId?`) so we can test "missing" userId.
-app.get("/api/cart/getUserOrders/:userId?", (req, res) => getUserOrders(req, res));
+app.get("/api/cart/getUserOrders{/:userId}", (req, res) => getUserOrders(req, res));
 
 // 4️⃣ (Optional) If you have a real DB, mock or set up DB calls in beforeAll/afterAll.
 beforeAll(async () => {
