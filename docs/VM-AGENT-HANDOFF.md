@@ -5,7 +5,7 @@ For whoever sets up the server. The app side is finished and merged; this is onl
 ## Before deploying
 
 - Wait for CI to publish the app image to `ghcr.io/junkit2003/final-year-project-backend`.
-- The **Deploy to VM** job runs after the repository variable `DEPLOY_ENABLED` is set to `true` and the SSH settings below are in place.
+- Set up the SSH settings below before the first deploy. Set `DEPLOY_ENABLED=true` to enable automatic deploys on pushes to `main`.
 
 ## What runs on the VM
 
@@ -97,7 +97,7 @@ Then delete the local private key.
 
 ### 6. First deploy
 
-Actions > **CI/CD** > Run workflow on `main` (or push to `main`). The deploy job runs `deploy.sh`, which pulls the app image for the commit, starts the stack and waits up to 3 minutes for health checks. If a release is unhealthy it starts the previous tag again and fails the job.
+Actions > **CI/CD** > Run workflow on `main` with **Deploy this main build to production** selected (or push to `main` with `DEPLOY_ENABLED=true`). The deploy job runs `deploy.sh`, which pulls the app image for the commit, starts the stack and waits up to 3 minutes for health checks. If a release is unhealthy it starts the previous tag again and fails the job.
 
 If the pull is denied, go to GitHub > Packages > each `final-year-project-*` package > Package settings > Manage Actions access, and add this repository with read access.
 
