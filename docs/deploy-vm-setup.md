@@ -45,19 +45,19 @@ sudo chown deploy:deploy /home/deploy/.ssh/authorized_keys && sudo chmod 600 /ho
 Copy `.env.example` from the repo to `/opt/faction/.env` and fill it in:
 
 - `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `SESSION_SECRET` (`openssl rand -hex 32`).
-- `PUBLIC_URL=https://faction.junkit.work` (Stripe returns shoppers here), `COOKIE_SECURE=true` behind HTTPS.
-- `STRIPE_SECRET_KEY` (test key first), `EMAIL_*` for password reset codes.
+- `PUBLIC_URL=https://bikeshop.junkit.my` (Stripe returns shoppers here), `COOKIE_SECURE=true` behind HTTPS.
+- `STRIPE_SECRET_KEY` (test key first), `EMAIL_*` for password reset codes, and `EMAIL_FROM` set to a sender verified with your SMTP provider (defaults to `noreply@junkit.work`).
 - `HTTP_BIND=127.0.0.1` and `HTTP_PORT=8080`, then point the VM's existing nginx (or Cloudflare tunnel) at `http://127.0.0.1:8080`, forwarding `X-Forwarded-Proto`.
 
 ```bash
 sudo chown deploy:deploy /opt/faction/.env && sudo chmod 600 /opt/faction/.env
 ```
 
-Example host nginx server block:
+Ready-made host config: [`deploy/nginx/bikeshop.junkit.my.conf`](../deploy/nginx/bikeshop.junkit.my.conf) (HTTP block; `certbot --nginx -d bikeshop.junkit.my` adds HTTPS). Equivalent server block:
 
 ```nginx
 server {
-    server_name faction.junkit.work;
+    server_name bikeshop.junkit.my;
     # ...existing listen 443 ssl / certificate lines...
     client_max_body_size 100m;
     location / {
@@ -106,7 +106,7 @@ On a fresh database the API creates one account, `Admin`. Its password is `ADMIN
 cd /opt/faction && bash set-admin-password.sh        # prompts twice, hashes with the API's bcrypt
 ```
 
-**Existing install (faction.junkit.work):** the old code seeded `Admin` / `admin` and the README published it. Run `set-admin-password.sh` on that server now, even before moving it to containers.
+**Old install (faction.junkit.work, if still running):** the old code seeded `Admin` / `admin` and the README published it. Run `set-admin-password.sh` on that server now, even before moving it to containers.
 
 ## 6. Rollback
 

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { transporter } from '../../config/nodemailer.js';
+import { transporter, mailFrom } from '../../config/nodemailer.js';
 import { db } from '../../database/index.js';
 import { InputValidationError } from '../../database/utils.js';
 
@@ -28,7 +28,7 @@ export default async function requestPasswordReset(req, res) {
 
     // Send password reset email
     const mailOptions = {
-      from: `"Faction Bikeworks" <noreply@junkit.work>`, // Use Brevo-verified sender
+      from: mailFrom(), // EMAIL_FROM, a Brevo-verified sender
       to: user.email,
       subject: 'Password Reset Request',
       text: `Hello,
