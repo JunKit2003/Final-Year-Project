@@ -129,4 +129,23 @@ describe("Signup API Tests", () => {
       category: mockNewUser.category,
     });
   });
+
+  it("ignores a category in the request: public signups are always Customer", async () => {
+    db.Account.findOne.mockResolvedValueOnce(null);
+    db.Account.findOne.mockResolvedValueOnce(null);
+    db.Account.findOne.mockResolvedValueOnce(null);
+    db.Account.create.mockResolvedValueOnce({ id: 9, username: "sneaky", category: "Customer" });
+
+    await request(app).post("/signup").send({
+      username: "sneaky",
+      email: "sneaky@example.com",
+      password: "password123",
+      first_name: "Sam",
+      last_name: "Lee",
+      phone_number: "1234567899",
+      category: "Admin",
+    });
+
+    expect(db.Account.create).toHaveBeenLastCalledWith(expect.objectContaining({ category: "Customer" }));
+  });
 });

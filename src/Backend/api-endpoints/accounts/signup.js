@@ -15,7 +15,7 @@ import { db } from "../../database/index.js";
  *  - first_name
  *  - last_name
  *  - phone_number
- *  - category (default: customer)
+ *  (any `category` sent by the client is ignored: public signups are always customers)
  */
 export default async function signup(req, res) {
   try {
@@ -27,8 +27,9 @@ export default async function signup(req, res) {
       first_name,
       last_name,
       phone_number,
-      category = "customer",
     } = req.body;
+    // Never trust a role from the request body: admin accounts can't be self-created.
+    const category = "Customer";
 
     // 2. Validate input - All fields are mandatory
     if (
