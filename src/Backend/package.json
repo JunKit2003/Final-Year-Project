@@ -7,7 +7,8 @@
   "scripts": {
     "test": "vitest",
     "start": "node server",
-    "dev": "nodemon server"
+    "dev": "nodemon server",
+    "seed:demo": "node scripts/seed-demo.js"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +33,7 @@
     "mysql2": "^3.24.6",
     "nodemailer": "^10.6.0",
     "sequelize": "^6.37.8",
-    "stripe": "^23.2.0"
+    "stripe": "^23.2.0",
+    "umzug": "^3.8.3"
   }
 }
