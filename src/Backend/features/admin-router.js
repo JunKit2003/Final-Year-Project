@@ -1,6 +1,6 @@
-// Everything under /api/admin. requireAdmin is applied once, here.
+// Everything under /api/admin. The admin check (re-read from the database) is applied once, here.
 import { Router } from "express";
-import { requireAdmin } from "../middleware/auth.js";
+import { requireActiveAdmin } from "./requireActiveAdmin.js";
 import settings from "./settings/routes.js";
 import activity from "./activity/routes.js";
 import stock from "./stock/routes.js";
@@ -11,9 +11,10 @@ import taxonomy from "./taxonomy/routes.js";
 import orders from "./orders/routes.js";
 import banners from "./banners/routes.js";
 import brands from "./brands/routes.js";
+import customers from "./customers/routes.js";
 
 const admin = Router();
-admin.use(requireAdmin);
+admin.use(requireActiveAdmin);
 admin.use(settings);
 admin.use(activity);
 admin.use(stock);
@@ -24,6 +25,7 @@ admin.use(taxonomy);
 admin.use(orders);
 admin.use(banners);
 admin.use(brands);
+admin.use(customers);
 // Unknown admin paths: JSON 404 rather than falling through to the SPA.
 admin.use((req, res) => res.status(404).json({ message: "Not found." }));
 

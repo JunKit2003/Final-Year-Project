@@ -12,6 +12,8 @@ const SettingsPage = lazy(() => import("./pages/settings/SettingsPage"));
 const ContentPage = lazy(() => import("./pages/content/ContentPage"));
 const BannersPage = lazy(() => import("./pages/BannersPage"));
 const TaxonomyPage = lazy(() => import("./pages/TaxonomyPage"));
+const CustomersList = lazy(() => import("./pages/customers/CustomersList"));
+const CustomerDetail = lazy(() => import("./pages/customers/CustomerDetail"));
 const OrdersList = lazy(() => import("./pages/orders/OrdersList"));
 const OrderDetail = lazy(() => import("./pages/orders/OrderDetail"));
 
@@ -39,8 +41,8 @@ export function adminRoutes() {
       <Route path="brands" element={<Navigate to="/admin/taxonomy" replace />} />
       <Route path="content/:page" element={<ContentPage />} />
       <Route path="settings/:group" element={<SettingsPage />} />
-      <Route path="customers" element={P("Customers")} />
-      <Route path="customers/:id" element={P("Customer")} />
+      <Route path="customers" element={<CustomersList />} />
+      <Route path="customers/:id" element={<CustomerDetail />} />
       <Route path="activity" element={P("Activity")} />
       <Route path="*" element={P("Not found")} />
     </Route>
