@@ -1,7 +1,8 @@
-// Background loop: releases abandoned checkouts (and, later, re-checks pending refunds).
+// Background loop: releases abandoned checkouts and re-checks refunds Stripe hasn't confirmed.
 import { releaseExpiredHolds } from "./payment.js";
+import { reconcilePendingRefunds } from "./service.js";
 
-const jobs = [releaseExpiredHolds];
+const jobs = [releaseExpiredHolds, () => reconcilePendingRefunds()];
 export const addSweepJob = (fn) => jobs.push(fn);
 
 export function startSweeper({ intervalMs = 60000 } = {}) {

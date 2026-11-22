@@ -8,6 +8,7 @@ import media from "./media/routes.js";
 import productCsv from "./products/csvRoutes.js";
 import products from "./products/routes.js";
 import taxonomy from "./taxonomy/routes.js";
+import orders from "./orders/routes.js";
 
 const admin = Router();
 admin.use(requireAdmin);
@@ -18,6 +19,7 @@ admin.use(media);
 admin.use(productCsv);
 admin.use(products);
 admin.use(taxonomy);
+admin.use(orders);
 // Unknown admin paths: JSON 404 rather than falling through to the SPA.
 admin.use((req, res) => res.status(404).json({ message: "Not found." }));
 
