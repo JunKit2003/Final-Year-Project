@@ -288,3 +288,4 @@ a.adm-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .adm-preview-stage .hero { min-height: 760px; height: 760px; }
 .adm-preview-stage .center-screen { min-height: 520px; }
 .adm-grid-2 > .adm-panel + .adm-panel { margin-top: 0; }
+.adm-card strong { font-size: clamp(22px, 2vw, 30px); white-space: nowrap; }

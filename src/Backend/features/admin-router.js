@@ -12,6 +12,7 @@ import orders from "./orders/routes.js";
 import banners from "./banners/routes.js";
 import brands from "./brands/routes.js";
 import customers from "./customers/routes.js";
+import dashboard from "./dashboard/routes.js";
 
 const admin = Router();
 admin.use(requireActiveAdmin);
@@ -26,6 +27,7 @@ admin.use(orders);
 admin.use(banners);
 admin.use(brands);
 admin.use(customers);
+admin.use(dashboard);
 // Unknown admin paths: JSON 404 rather than falling through to the SPA.
 admin.use((req, res) => res.status(404).json({ message: "Not found." }));
 

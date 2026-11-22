@@ -14,6 +14,8 @@ const BannersPage = lazy(() => import("./pages/BannersPage"));
 const TaxonomyPage = lazy(() => import("./pages/TaxonomyPage"));
 const CustomersList = lazy(() => import("./pages/customers/CustomersList"));
 const CustomerDetail = lazy(() => import("./pages/customers/CustomerDetail"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ActivityPage = lazy(() => import("./pages/ActivityPage"));
 const OrdersList = lazy(() => import("./pages/orders/OrdersList"));
 const OrderDetail = lazy(() => import("./pages/orders/OrderDetail"));
 
@@ -29,7 +31,7 @@ export function adminRoutes() {
         </RequireAdmin>
       }
     >
-      <Route index element={P("Dashboard")} />
+      <Route index element={<Dashboard />} />
       <Route path="orders" element={<OrdersList />} />
       <Route path="orders/:id" element={<OrderDetail />} />
       <Route path="products" element={<ProductsList />} />
@@ -43,7 +45,7 @@ export function adminRoutes() {
       <Route path="settings/:group" element={<SettingsPage />} />
       <Route path="customers" element={<CustomersList />} />
       <Route path="customers/:id" element={<CustomerDetail />} />
-      <Route path="activity" element={P("Activity")} />
+      <Route path="activity" element={<ActivityPage />} />
       <Route path="*" element={P("Not found")} />
     </Route>
   );
