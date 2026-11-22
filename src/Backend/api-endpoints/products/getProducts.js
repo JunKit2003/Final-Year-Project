@@ -5,7 +5,7 @@ import {
   getProductFromDB,
 } from "../../database/utils.js";
 
-import { getImageUrlDataForProduct } from "../../file-uploads/utils.js";
+import { mediaForVariations } from "../../features/media/service.js";
 
 // Retrieve all products or a single product
 export default async function getProducts(req, res) {
@@ -58,31 +58,15 @@ export default async function getProducts(req, res) {
   }
 }
 
-// Helper function to attach images to a product's variations
-async function attachImagesToProduct(product) {
-  // Ensure variations are included
-  if (!product.variations || product.variations.length === 0) {
-    // console.log("No variations found for product:", product);
-    return product;
-  }
-
-  const productId = product.id.toString();
-
-  // Extract SKUs from variations
-  const skus = product.variations.map((variation) => variation.sku);
-
-  // Get images data for the product's variations
-  const imagesData = await getImageUrlDataForProduct(productId, skus);
-  // console.log("Retrieved Images Data:", imagesData);
-
-  // Attach images to each variation
+// Attach photos (from product_media) to each variation, in display order.
+// Shape kept from the old SKU-folder version: variation.images = { files: [url], names: [] }.
+export async function attachImagesToProduct(product) {
+  if (!product.variations || product.variations.length === 0) return product;
+  const media = await mediaForVariations(product.variations.map((v) => v.id));
   product.variations = product.variations.map((variation) => {
-    const sku = variation.sku;
-    variation.images = imagesData[sku] || { files: [], names: [] };
-    // console.log(`Attached Images to SKU ${sku}:`, variation.images);
+    const list = media.get(variation.id) || [];
+    variation.images = { files: list.map((m) => m.url), names: list.map((m) => String(m.id)) };
     return variation;
   });
-
-  // console.log("Final Product with Variations and Images:", product);
   return product;
 }

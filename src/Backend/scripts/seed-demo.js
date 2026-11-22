@@ -29,6 +29,8 @@ export async function seedDemo(db, { imagesRoot = process.env.IMAGES_ROOT || "im
     }
     created++;
   }
+  const { importSkuFolders } = await import("../features/media/legacyImport.js");
+  await importSkuFolders({ db });
   return { created };
 }
 
