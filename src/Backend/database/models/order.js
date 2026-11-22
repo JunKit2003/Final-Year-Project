@@ -80,6 +80,15 @@ export default (sequelize, DataTypes) => {
           },
         },
       },
+      stripeSessionId: { type: DataTypes.STRING, allowNull: true },
+      stripePaymentIntentId: { type: DataTypes.STRING, allowNull: true },
+      // What Stripe actually charged, and what has been refunded (pending refunds included).
+      paidAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: false, defaultValue: 0 },
+      refundedAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: false, defaultValue: 0 },
+      paidAt: { type: DataTypes.DATE, allowNull: true },
+      courier: { type: DataTypes.STRING(60), allowNull: true },
+      trackingNumber: { type: DataTypes.STRING(80), allowNull: true },
+      version: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
     },
     {
       sequelize,
@@ -98,6 +107,8 @@ export default (sequelize, DataTypes) => {
     });
 
     // Each Order can have many OrderItems.
+    Order.hasMany(models.OrderEvent, { foreignKey: "orderId", as: "events" });
+    Order.hasMany(models.OrderRefund, { foreignKey: "orderId", as: "refunds" });
     Order.hasMany(models.OrderItem, {
       foreignKey: "orderId",
       as: "items",

@@ -1,95 +1,25 @@
-// controllers/cart/cancelOrder.js
-import { getStripe } from "../../config/stripe.js";
-import {
-  pingDatabase,
-  DatabaseConnectionError,
-  InputValidationError,
-  DatabaseError,
-} from "../../database/utils.js";
-import { db } from "../../database/index.js";
+import { getStripe, PaymentsNotConfiguredError } from "../../config/stripe.js";
+import { cancelPending } from "../../features/orders/payment.js";
 
-
+// DELETE /api/cart/cancelOrder, called when the shopper backs out of Stripe Checkout.
+// The order is kept (as Cancelled) and its held stock goes back on the shelf.
 export default async function cancelOrder(req, res) {
-  // Before opening a DB transaction: no Stripe key means no payments (503), not a crash.
-  let stripe;
+  const { session_id, user_id } = req.body || {};
+  if (!session_id) return res.status(400).json({ message: "Missing 'session_id' in the request body!" });
+  if (!user_id) return res.status(400).json({ message: "Missing 'user_id' in the request body!" });
   try {
-    stripe = getStripe();
-  } catch (error) {
-    return res.status(503).json({ message: error.message });
-  }
-
-    //console.log(">>>> Inside cancelOrder controller, request body:", req.body);
-  const transaction = await db.sequelize.transaction();
-
-  try {
-    // 1) Ping DB
-    await pingDatabase();
-
-    // 2) Extract from req.body
-    const { session_id, user_id } = req.body;
-    if (!session_id) {
-      throw new InputValidationError("Missing 'session_id' in the request body!");
-    }
-    if (!user_id) {
-      throw new InputValidationError("Missing 'user_id' in the request body!");
-    }
-
-    // 3) Retrieve the Stripe session
+    const stripe = getStripe();
     const session = await stripe.checkout.sessions.retrieve(session_id);
-
-    // Optional: check payment_status if you want to ensure it's *not* paid
-    // If it's already paid, you might refuse to delete the order row:
-    if (session.payment_status === "paid") {
-      throw new InputValidationError(
-        "This order has already been paid, cannot delete!"
-      );
-    }
-
-    // 4) Get the orderId from session metadata
-    const orderId = session.metadata?.orderId;
-    if (!orderId) {
-      throw new InputValidationError("Order ID missing in Stripe session metadata!");
-    }
-
-    // 5) Find the order with 'Pending' status
-    const order = await db.Order.findOne({
-      where: {
-        id: orderId,
-        userId: user_id,
-        status: "Pending",
-      },
-      transaction,
-    });
-
-    if (!order) {
-      throw new InputValidationError(
-        `No 'Pending' order found for user ${user_id} with orderId ${orderId}.`
-      );
-    }
-
-    // 6) Delete the order
-    await order.destroy({ transaction });
-
-    // 7) Commit the transaction
-    await transaction.commit();
-
-    // 8) Send success
-    return res.status(200).json({
-      message: "Order canceled/deleted successfully.",
-    });
+    if (session.payment_status === "paid") return res.status(400).json({ message: "This order has already been paid, cannot cancel!" });
+    const orderId = Number(session.metadata?.orderId);
+    if (!orderId) return res.status(400).json({ message: "Order ID missing in Stripe session metadata!" });
+    const changed = await cancelPending(orderId, { note: "Cancelled at checkout", userId: user_id });
+    if (!changed) return res.status(400).json({ message: `No 'Pending' order found for user ${user_id} with orderId ${orderId}.` });
+    if (session.status === "open") await stripe.checkout.sessions.expire(session_id).catch(() => {});
+    return res.status(200).json({ message: "Order cancelled." });
   } catch (error) {
-    // Rollback on error
-    await transaction.rollback();
-
-    if (error instanceof InputValidationError) {
-      return res.status(400).json({ message: error.message });
-    } else if (error instanceof DatabaseConnectionError) {
-      return res.status(500).json({ message: "Unable to connect to the database!" });
-    } else if (error instanceof DatabaseError) {
-      return res.status(500).json({ message: error.message });
-    } else {
-      console.error("Error canceling order:", error);
-      return res.status(500).json({ message: "Internal server error", error });
-    }
+    if (error instanceof PaymentsNotConfiguredError) return res.status(503).json({ message: error.message });
+    console.error("Error cancelling order:", error);
+    return res.status(500).json({ message: "Something went wrong. Please try again." });
   }
 }

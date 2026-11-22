@@ -4,6 +4,8 @@ import cors from 'cors';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import appRoutes from './routes/routes.js';
+import { stripeWebhook } from './features/orders/webhook.js';
+import { startSweeper } from './features/orders/sweeper.js';
 import dotenv from 'dotenv';
 import { Sequelize } from 'sequelize';
 import SequelizeStoreInit from 'connect-session-sequelize';
@@ -37,6 +39,8 @@ const SequelizeStore = SequelizeStoreInit(session.Store);
 
 // Middleware
 app.use(cookieParser());
+// Stripe signs the raw body, so the webhook must see it before JSON parsing.
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '1mb' }), stripeWebhook);
 app.use(express.json());
 // Express 5's body parser leaves req.body undefined when no JSON body was sent
 // (Express 4 always set {}). Handlers destructure req.body, so keep the old default.
@@ -112,6 +116,9 @@ if (process.env.SERVE_STOREFRONT === 'true') {
     res.sendFile('index.html', { root: storefront, headers: shellCache, cacheControl: false });
   });
 }
+
+// Release abandoned checkouts and re-check pending refunds every minute.
+if (process.env.NODE_ENV !== 'test') startSweeper();
 
 const PORT = process.env.PORT_SERVER || 8000;
 app.listen(PORT, (error) => {
