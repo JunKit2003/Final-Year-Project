@@ -33,8 +33,14 @@ import {
 import { uploadMultiple } from '../file-uploads/multerConfig.js';
 import { requireAdmin, requireOwnCartItem, requireSelf } from '../middleware/auth.js';
 import { db } from '../database/index.js';
+import adminRouter from '../features/admin-router.js';
+import { publicSite } from '../features/settings/routes.js';
 
 const router = Router();
+
+// Site content and settings (public) and the admin API (admin only, see features/).
+router.get('/site', publicSite);
+router.use('/admin', adminRouter);
 
 // Access rules (identity comes from the session, never from ids in the request):
 //   public    - catalogue, banners, sign in/up, password reset
