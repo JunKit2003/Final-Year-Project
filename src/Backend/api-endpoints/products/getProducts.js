@@ -16,7 +16,9 @@ export default async function getProducts(req, res) {
       // Fetch the single product along with its variations
       const product = await getProductFromDB(productId);
 
-      if (!product) {
+      // Drafts and archived products are only visible to admins (with their status).
+      const isAdmin = req.session?.user?.category === "Admin";
+      if (!product || (product.status !== "live" && !isAdmin)) {
         throw new ProductNotFoundError(
           `Product with id ${productId} not found.`
         );

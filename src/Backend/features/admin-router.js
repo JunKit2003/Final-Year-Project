@@ -5,6 +5,7 @@ import settings from "./settings/routes.js";
 import activity from "./activity/routes.js";
 import stock from "./stock/routes.js";
 import media from "./media/routes.js";
+import products from "./products/routes.js";
 
 const admin = Router();
 admin.use(requireAdmin);
@@ -12,6 +13,7 @@ admin.use(settings);
 admin.use(activity);
 admin.use(stock);
 admin.use(media);
+admin.use(products);
 // Unknown admin paths: JSON 404 rather than falling through to the SPA.
 admin.use((req, res) => res.status(404).json({ message: "Not found." }));
 

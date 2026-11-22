@@ -95,7 +95,8 @@ const getProductFromDB = withDatabaseConnectivity(async (productId) => {
 	  // Fetch a single product by its ID, including variations
 	  const product = await db.Products.findOne({
 		where: { id: productId },
-		include: [{ model: db.Variations, as: "variations" }],
+		include: [{ model: db.Variations, as: "variations", where: { archivedAt: null }, required: false }],
+		order: [[{ model: db.Variations, as: "variations" }, "position", "ASC"], [{ model: db.Variations, as: "variations" }, "id", "ASC"]],
 	  });
   
 	  if (!product) {
@@ -114,13 +115,12 @@ const getProductFromDB = withDatabaseConnectivity(async (productId) => {
 const getProductsFromDB = withDatabaseConnectivity(async () => {
 	try {
 	  // Fetch all products, including variations
+	  // Shoppers only see live products and variants that haven't been archived.
 	  const products = await db.Products.findAll({
-		include: [{ model: db.Variations, as: "variations" }],
+		where: { status: "live" },
+		include: [{ model: db.Variations, as: "variations", where: { archivedAt: null }, required: false }],
+		order: [["id", "ASC"], [{ model: db.Variations, as: "variations" }, "position", "ASC"], [{ model: db.Variations, as: "variations" }, "id", "ASC"]],
 	  });
-  
-	  if (!products.length) {
-		throw new ProductNotFoundError();
-	  }
   
 	  // Extract just the core data (dataValues) from each product
 	  const plainProducts = products.map((product) =>

@@ -33,10 +33,13 @@ export async function adjustStock({ variationId, delta, reason, orderId = null, 
   if (!STOCK_REASONS.includes(reason)) throw new Error(`Unknown stock reason ${reason}`);
   const d = Number(delta);
   if (!Number.isInteger(d)) throw new Error("delta must be an integer");
-  const [, affected] = await db.sequelize.query(
-    "UPDATE variations SET stock = stock + :d WHERE id = :id AND stock + :d >= 0",
-    { replacements: { d, id: variationId }, transaction, type: QueryTypes.UPDATE }
-  );
+  // MySQL counts changed rows, so a zero delta "affects" nothing: skip the UPDATE for it.
+  const [, affected] = d === 0
+    ? [null, 1]
+    : await db.sequelize.query(
+        "UPDATE variations SET stock = stock + :d WHERE id = :id AND stock + :d >= 0",
+        { replacements: { d, id: variationId }, transaction, type: QueryTypes.UPDATE }
+      );
   // Locking (current) read: a plain SELECT could return this transaction's older snapshot.
   const [row] = await db.sequelize.query("SELECT stock, sku FROM variations WHERE id = :id FOR UPDATE", { replacements: { id: variationId }, transaction, type: QueryTypes.SELECT });
   if (!row) throw new NotFoundError("Variant not found.");
