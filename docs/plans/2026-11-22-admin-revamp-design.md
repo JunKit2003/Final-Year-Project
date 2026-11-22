@@ -55,7 +55,7 @@ The admin panel was built during the original final-year project, under time pre
 
 | Thing | Owner | Notes |
 |---|---|---|
-| Schema changes | `src/Backend/database/migrations/NNN-*.js` via Umzug | Run at startup before `sequelize.sync`; `sync` stays only for creating brand-new tables in dev |
+| Schema changes | `src/Backend/database/migrations/NNN-*.js` via Umzug | Run at startup **after** `sequelize.sync` (which creates brand-new tables); each migration checks before it changes anything, so fresh and old databases end up the same |
 | Site content & settings | `site_settings` table: `key` (PK), `value` JSON, `updatedAt`, `updatedBy` | One row per group (`shop`, `hours`, `theme`, `seo`, `emails`, `content.home.hero`, ...) |
 | Setting shapes + defaults | `src/shared/site-schema.js` | One source of truth, imported as `../shared/site-schema.js` by backend (validation) and frontend (fallback). The Dockerfile adds `COPY shared/ /shared/` to both stages (build context is `src`, workdirs are `/app`), so the relative path resolves locally and in the image |
 | Product photos | `product_media`: `id`, `variationId`, `path`, `position`, `alt` | Files at `images/product_images/<productId>/<variationId>/<mediaId>.<ext>`. Keyed by variation id, not SKU |

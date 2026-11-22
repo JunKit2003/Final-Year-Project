@@ -2,7 +2,8 @@
 import { lazy } from "react";
 import { Navigate, Route } from "react-router";
 import RequireAdmin from "./RequireAdmin";
-import Placeholder from "./pages/Placeholder";
+import { Link } from "react-router";
+import { EmptyState } from "./ui/layout";
 
 const AdminLayout = lazy(() => import("./AdminLayout"));
 const ProductsList = lazy(() => import("./pages/products/ProductsList"));
@@ -19,7 +20,16 @@ const ActivityPage = lazy(() => import("./pages/ActivityPage"));
 const OrdersList = lazy(() => import("./pages/orders/OrdersList"));
 const OrderDetail = lazy(() => import("./pages/orders/OrderDetail"));
 
-const P = (title) => <Placeholder title={title} />;
+const AdminNotFound = () => (
+  <EmptyState
+    title="That admin page doesn't exist"
+    action={
+      <Link to="/admin" className="btn btn-primary adm-btn">
+        Go to the dashboard
+      </Link>
+    }
+  />
+);
 
 export function adminRoutes() {
   return (
@@ -46,7 +56,7 @@ export function adminRoutes() {
       <Route path="customers" element={<CustomersList />} />
       <Route path="customers/:id" element={<CustomerDetail />} />
       <Route path="activity" element={<ActivityPage />} />
-      <Route path="*" element={P("Not found")} />
+      <Route path="*" element={<AdminNotFound />} />
     </Route>
   );
 }

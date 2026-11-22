@@ -22,22 +22,5 @@ export default [
       "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]", argsIgnorePattern: "^_" }],
     },
   },
-  {
-    // Legacy admin screens, carried over from CRA unchanged in behaviour. They predate the
-    // React Compiler rules; refactoring their effects is tracked separately so this upgrade
-    // doesn't risk the admin flows. New code must pass these rules.
-    files: [
-      "src/pages/Admin/**",
-      "src/components/Admin/**",
-      "src/components/BubbleSelector.jsx",
-      "src/components/TextFieldWithCounter.jsx",
-      "src/components/FilterSearch.jsx",
-      "src/components/ImageUploadUI.jsx",
-    ],
-    rules: {
-      "react-hooks/set-state-in-effect": "off",
-      "react-hooks/immutability": "off",
-    },
-  },
   { files: ["vite.config.js", "eslint.config.js"], languageOptions: { globals: { ...globals.node } } },
 ];
