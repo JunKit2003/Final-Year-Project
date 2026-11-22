@@ -63,7 +63,21 @@ describe("site settings", () => {
     expect(list.body.items[0].summary).toBe("Updated Shop details");
   });
 
+  it("uploads a content image and refuses non-images", async () => {
+    const os = await import("os");
+    const fs = await import("fs");
+    process.env.IMAGES_ROOT = fs.mkdtempSync(`${os.tmpdir()}/site-`);
+    const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(40, 1)]);
+    const ok = await request(admin).post("/api/admin/settings/upload").attach("file", jpg, "shop.jpg");
+    expect(ok.status).toBe(201);
+    expect(ok.body.url).toMatch(/^\/images\/site\/[\w-]+\.jpg$/);
+    const bad = await request(admin).post("/api/admin/settings/upload").attach("file", Buffer.from("not an image at all, sorry"), "x.jpg");
+    expect(bad.status).toBe(400);
+    delete process.env.IMAGES_ROOT;
+  });
+
   it.each([
+    ["post", "/api/admin/settings/upload"],
     ["get", "/api/admin/settings/shop"],
     ["put", "/api/admin/settings/shop"],
     ["get", "/api/admin/activity"],
