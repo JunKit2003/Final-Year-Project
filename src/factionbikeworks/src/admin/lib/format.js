@@ -7,3 +7,4 @@ export const formatDateTime = (v) => (v ? dt.format(new Date(v)) : "");
 export const formatDate = (v) => (v ? d.format(new Date(v)) : "");
 export const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 export const signed = (n) => (n > 0 ? `+${n}` : String(n));
+export const rm = (v) => `RM ${(Math.round(Number(v || 0) * 100) / 100).toFixed(2)}`;
