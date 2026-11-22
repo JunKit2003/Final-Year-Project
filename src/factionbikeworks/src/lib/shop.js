@@ -1,3 +1,5 @@
+import { DEFAULTS, shopStatus as sharedShopStatus } from "../../../shared/site-schema.js";
+
 // Pure helpers for products, prices, cart and catalog filtering. No React, no network: unit-tested.
 
 const rm = new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", minimumFractionDigits: 2 });
@@ -129,12 +131,6 @@ export const orderProgress = (status) => {
   return Math.max(0, ORDER_STEPS.indexOf(status));
 };
 
-/** Shop hours (Malaysia time, UTC+8): weekdays 11:00 to 19:30, Saturday 11:00 to 16:00, closed Sunday. */
-export const shopStatus = (now = new Date()) => {
-  const my = new Date(now.getTime() + (now.getTimezoneOffset() + 480) * 60000);
-  const day = my.getDay();
-  const t = my.getHours() + my.getMinutes() / 60;
-  const hours = day === 0 ? null : day === 6 ? [11, 16] : [11, 19.5];
-  if (hours && t >= hours[0] && t < hours[1]) return { open: true, label: "Open now" };
-  return { open: false, label: day === 0 ? "Closed today, gone riding" : "Closed now" };
-};
+/** Open/closed with the default hours. Pages use useSite() hours; this stays for tests. */
+export const shopStatus = (now = new Date()) => sharedShopStatus(DEFAULTS.hours, now);
+
