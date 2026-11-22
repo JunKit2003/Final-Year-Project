@@ -2,19 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import logo from "../assets/faction-logo-ink.png";
 import { useSession, useThemeMode, useToast } from "../lib/store";
+import { useSite } from "../lib/site";
 import { Bag, ChevronDown, Dashboard, Logout, Moon, Receipt, Search, Sun, User } from "./ui/Icons";
 
-const LINKS = [
-  { to: "/catalog", label: "Shop" },
-  { to: "/about", label: "About" },
-  { to: "/chatbot", label: "Ask the mechanic" },
-];
 
 export function Logo({ className = "" }) {
   return <img src={logo} alt="Faction Bikeworks" className={`logo ${className}`} width="830" height="276" />;
 }
 
 export default function Header() {
+  const site = useSite();
+  const LINKS = site["content.header"].links;
   const { user, isAdmin, cartCount, logout } = useSession();
   const { mode, toggle } = useThemeMode();
   const toast = useToast();
@@ -94,7 +92,7 @@ export default function Header() {
       <div className="progress" aria-hidden />
       <header className={`nav ${scrolled ? "is-scrolled" : ""} ${pathname === "/" && !scrolled && !open ? "nav--on-dark" : ""} ${hidden && !open && !menu ? "is-hidden" : ""}`}>
         <div className="wrap nav-inner">
-          <Link to="/" className="nav-logo" aria-label="Faction Bikeworks home">
+          <Link to="/" className="nav-logo" aria-label={`${site.shop.name} home`}>
             <Logo />
           </Link>
 

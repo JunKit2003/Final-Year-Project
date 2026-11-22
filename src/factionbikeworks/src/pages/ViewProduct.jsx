@@ -7,7 +7,7 @@ import { formatRM, relatedProducts, stockState, toNumber } from "../lib/shop";
 import ProductCard from "../components/ProductCard";
 import { Loader } from "../components/ui/Bits";
 import { ArrowLeft, Bag, ChevronLeft, ChevronRight, Minus, Plus, Shield, Torx, Truck, WhatsApp } from "../components/ui/Icons";
-import { SHOP } from "../components/Footer";
+import { useSite } from "../lib/site";
 
 function Gallery({ images, title }) {
   const [i, setI] = useState(0);
@@ -87,6 +87,7 @@ export default function ViewProductRoute() {
 }
 
 function ViewProduct({ productId }) {
+  const { shop } = useSite();
   const { user, addToCart } = useSession();
   const { products } = useProducts();
   const toast = useToast();
@@ -237,7 +238,7 @@ function ViewProduct({ productId }) {
                   <Bag /> {stock <= 0 ? "Out of stock" : adding ? "Adding…" : `Add to cart · ${formatRM(toNumber(v.price) * qtyShown)}`}
                 </button>
               </div>
-              <a className="btn btn-ghost btn-block" href={`${SHOP.whatsapp}?text=${wa}`} target="_blank" rel="noopener noreferrer">
+              <a className="btn btn-ghost btn-block" href={`${shop.whatsapp}?text=${wa}`} target="_blank" rel="noopener noreferrer">
                 <WhatsApp /> Ask about this part
               </a>
             </div>

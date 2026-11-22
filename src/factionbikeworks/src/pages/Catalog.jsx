@@ -3,12 +3,14 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useProducts } from "../lib/store";
 import { SORTS, countBy, filterProducts } from "../lib/shop";
 import ProductCard, { ProductCardSkeleton } from "../components/ProductCard";
-import { Empty, PageHead } from "../components/ui/Bits";
+import { Empty, PageHead, headLines } from "../components/ui/Bits";
+import { useSite } from "../lib/site";
 import { Close, Search, Sliders } from "../components/ui/Icons";
 
 const PAGE = 12;
 
 export default function Catalog() {
+  const headings = useSite()["content.pages"];
   const { brandname } = useParams();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -115,7 +117,7 @@ export default function Catalog() {
 
   return (
     <div className="page catalog">
-      <PageHead kicker={f.brand ? `Brand / ${f.brand}` : "The shop"} lines={f.brand ? [f.brand] : ["Parts", "& kit"]} outline={[1]} lead="Components we ride, fit and stand behind. Filter by part, brand or budget." />
+      <PageHead kicker={f.brand ? `Brand / ${f.brand}` : headings.catalog.kicker} lines={f.brand ? [f.brand] : headLines(headings.catalog)} lead={headings.catalog.lead} />
 
       <div className="catalog-bar">
         <div className="wrap catalog-bar-inner">

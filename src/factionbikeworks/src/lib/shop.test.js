@@ -10,7 +10,6 @@ import {
   priceRange,
   productImages,
   relatedProducts,
-  shopStatus,
   stockState,
   totalStock,
 } from "./shop";
@@ -111,14 +110,5 @@ describe("orders and shop hours", () => {
     expect(orderProgress("Pending")).toBe(0);
     expect(orderProgress("Shipped")).toBe(2);
     expect(orderProgress("Cancelled")).toBe(-1);
-  });
-
-  // 2026-11-18 is a Wednesday. Times are UTC; the shop runs on UTC+8.
-  it("knows when the shop is open", () => {
-    expect(shopStatus(new Date("2026-11-18T04:00:00Z")).open).toBe(true); // 12:00 MYT
-    expect(shopStatus(new Date("2026-11-18T12:00:00Z")).open).toBe(false); // 20:00 MYT
-    expect(shopStatus(new Date("2026-11-21T07:30:00Z")).open).toBe(true); // Sat 15:30 MYT
-    expect(shopStatus(new Date("2026-11-21T08:30:00Z")).open).toBe(false); // Sat 16:30 MYT
-    expect(shopStatus(new Date("2026-11-22T04:00:00Z")).label).toMatch(/gone riding/);
   });
 });

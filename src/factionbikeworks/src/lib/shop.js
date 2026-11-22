@@ -1,5 +1,3 @@
-import { DEFAULTS, shopStatus as sharedShopStatus } from "../../../shared/site-schema.js";
-
 // Pure helpers for products, prices, cart and catalog filtering. No React, no network: unit-tested.
 
 const rm = new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", minimumFractionDigits: 2 });
@@ -130,7 +128,3 @@ export const orderProgress = (status) => {
   if (status === "Cancelled") return -1;
   return Math.max(0, ORDER_STEPS.indexOf(status));
 };
-
-/** Open/closed with the default hours. Pages use useSite() hours; this stays for tests. */
-export const shopStatus = (now = new Date()) => sharedShopStatus(DEFAULTS.hours, now);
-

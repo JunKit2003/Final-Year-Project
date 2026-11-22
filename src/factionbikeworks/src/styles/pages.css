@@ -1231,3 +1231,10 @@ a.contact-card:hover { border-color: var(--accent); transform: translateY(-5px);
 
 /* MUI drawer used as the admin sidebar sits below the site header. */
 .app--admin .MuiDrawer-docked .MuiDrawer-paper { top: var(--nav-h); height: calc(100% - var(--nav-h)); }
+
+/* Banner with a link: the whole photo is clickable, under the copy. */
+.hero-banner-link { position: absolute; inset: 0; z-index: 1; pointer-events: auto; }
+.hero:has(.hero-banner-link) .hero-inner,
+.hero:has(.hero-banner-link) .hero-inner * { pointer-events: none; }
+.hero:has(.hero-banner-link) .hero-inner :is(a, button) { pointer-events: auto; }
+.visit-grid--solo { grid-template-columns: 1fr; }
