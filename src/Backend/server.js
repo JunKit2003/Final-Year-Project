@@ -100,7 +100,7 @@ sessionStore.sync();
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api', appRoutes);
-app.use('/images', express.static('images', { maxAge: '7d' }));
+app.use('/images', express.static(process.env.IMAGES_ROOT || 'images', { maxAge: '7d' }));
 
 if (process.env.SERVE_STOREFRONT === 'true') {
   const storefront = fileURLToPath(new URL('./storefront/', import.meta.url));

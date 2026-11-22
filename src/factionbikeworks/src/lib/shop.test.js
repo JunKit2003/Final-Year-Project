@@ -112,3 +112,23 @@ describe("orders and shop hours", () => {
     expect(orderProgress("Cancelled")).toBe(-1);
   });
 });
+
+describe("admin-driven product fields", () => {
+  it("uses the product's low-stock threshold", async () => {
+    const { stockState } = await import("./shop");
+    expect(stockState(2, 2).label).toBe("Only 2 left");
+    expect(stockState(5, 2).key).toBe("in");
+    expect(stockState(0, 10).label).toBe("Out of stock");
+  });
+  it("shows a was price only when it's above the price", async () => {
+    const { cardPrice, wasPrice } = await import("./shop");
+    expect(wasPrice({ price: "389.00", compareAtPrice: "450.00" })).toBe(450);
+    expect(wasPrice({ price: "389.00", compareAtPrice: null })).toBeNull();
+    expect(cardPrice({ variations: [{ price: 500, compareAtPrice: 600 }, { price: 300, compareAtPrice: 350 }] })).toEqual({ price: 300, was: 350 });
+  });
+  it("puts featured products first", async () => {
+    const { filterProducts } = await import("./shop");
+    const p = (id, featured) => ({ id, featured, name: `P${id}`, variations: [{ price: 1, stock: 1 }] });
+    expect(filterProducts([p(1, false), p(2, false), p(3, true)], { sort: "featured" }).map((x) => x.id)).toEqual([3, 2, 1]);
+  });
+});

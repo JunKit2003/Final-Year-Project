@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router";
 import api, { assetUrl } from "../lib/api";
 import { useProducts, useSession, useToast } from "../lib/store";
 import { Reveal } from "../lib/motion";
-import { formatRM, relatedProducts, stockState, toNumber } from "../lib/shop";
+import { formatRM, relatedProducts, stockState, toNumber, wasPrice } from "../lib/shop";
 import ProductCard from "../components/ProductCard";
 import { Loader } from "../components/ui/Bits";
 import { ArrowLeft, Bag, ChevronLeft, ChevronRight, Minus, Plus, Shield, Torx, Truck, WhatsApp } from "../components/ui/Icons";
@@ -111,13 +111,14 @@ function ViewProduct({ productId }) {
   }, [productId]);
 
   useEffect(() => {
-    if (product) document.title = `${product.name} · ${product.brand} · Faction Bikeworks`;
-  }, [product]);
+    if (product) document.title = `${product.name} · ${product.brand} · ${shop.name}`;
+  }, [product, shop.name]);
 
   const variations = useMemo(() => product?.variations || [], [product]);
   const v = useMemo(() => variations[vi] || {}, [variations, vi]);
   const stock = Number(v.stock) || 0;
-  const state = stockState(stock);
+  const state = stockState(stock, product?.lowStockThreshold);
+  const was = wasPrice(v);
   const images = useMemo(() => (v.images?.files || []).map(assetUrl), [v]);
   const related = useMemo(() => relatedProducts(products, product), [products, product]);
 
@@ -158,11 +159,19 @@ function ViewProduct({ productId }) {
     }
   };
 
-  const wa = encodeURIComponent(`Hi Faction, is the ${product.brand} ${product.name} (${v.name || v.sku}) available? ${window.location.href}`);
+  const wa = encodeURIComponent(`Hi ${shop.name}, is the ${product.brand} ${product.name} (${v.name || v.sku}) available? ${window.location.href}`);
 
   return (
     <div className="page pdp">
       <div className="wrap">
+        {product.status && product.status !== "live" && (
+          <p className="alert alert-error pdp-draft" role="status">
+            {product.status === "draft" ? "Draft: not visible to shoppers." : "Archived: not visible to shoppers."}{" "}
+            <Link className="link" to={`/admin/products/${product.id}`}>
+              Edit in admin
+            </Link>
+          </p>
+        )}
         <nav className="crumbs mono" aria-label="Breadcrumb">
           <Link to="/catalog" className="crumb-back">
             <ArrowLeft /> Shop
@@ -186,6 +195,11 @@ function ViewProduct({ productId }) {
 
             <div className="pdp-price-row fade-up" style={{ animationDelay: "150ms" }}>
               <span className="pdp-price">{formatRM(v.price)}</span>
+              {was && (
+                <s className="price-was" aria-label={`Was ${formatRM(was)}`}>
+                  {formatRM(was)}
+                </s>
+              )}
               <span className={`tag tag--${state.key}`}>
                 <i /> {state.label}
               </span>
@@ -258,6 +272,12 @@ function ViewProduct({ productId }) {
                   <dd>{v.intendedUse}</dd>
                 </div>
               )}
+              {(product.specs || []).map((s) => (
+                <div key={s.label}>
+                  <dt className="mono">{s.label}</dt>
+                  <dd>{s.value}</dd>
+                </div>
+              ))}
               {v.sku && (
                 <div>
                   <dt className="mono">SKU</dt>
@@ -269,7 +289,7 @@ function ViewProduct({ productId }) {
             {product.description && (
               <div className="pdp-desc">
                 <p className="pdp-label mono">About this part</p>
-                <p>{product.description}</p>
+                <p style={{ whiteSpace: "pre-line" }}>{product.description}</p>
               </div>
             )}
 

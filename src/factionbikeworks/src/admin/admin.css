@@ -181,7 +181,7 @@
 .adm-table .shrink { width: 1%; white-space: nowrap; }
 .adm-table a.adm-row-link { font-weight: 600; }
 .adm-table a.adm-row-link:hover { color: var(--accent-text); }
-.adm-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--bg-3); border: 1px solid var(--line); }
+.adm-thumb { width: 44px; height: 44px; max-width: none; min-width: 44px; border-radius: 8px; object-fit: cover; background: var(--bg-3); border: 1px solid var(--line); }
 .adm-cell-btn { background: none; border: 1px dashed transparent; border-radius: 6px; padding: 3px 6px; margin: -3px -6px; font: inherit; color: inherit; font-variant-numeric: tabular-nums; }
 .adm-cell-btn:hover { border-color: var(--line-2); background: var(--surface-2); }
 
@@ -275,3 +275,13 @@ a.adm-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .adm-list-item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
 
 .adm-subnav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+
+/* Text-style buttons (class "link") inside the admin. */
+:is(.adm, .adm-dialog, .adm-popover, .adm-drawer) button.link { background: none; border: 0; padding: 0; color: inherit; font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+:is(.adm, .adm-dialog, .adm-popover, .adm-drawer) button.link.dim { color: var(--muted); }
+.adm-variants td:nth-child(2) { min-width: 150px; }
+.adm-variants td:nth-child(3) { min-width: 150px; }
+.adm-variants td:nth-child(7) { min-width: 160px; }
+.adm-preview-stage .pdp-title { font-size: 26px; line-height: 1.05; }
+.adm-preview-stage .pdp-price { font-size: 24px; }
+.adm-preview-stage .pcard { max-width: 250px; margin: 0 auto; }

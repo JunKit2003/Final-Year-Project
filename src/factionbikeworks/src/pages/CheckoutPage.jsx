@@ -30,7 +30,7 @@ const parseSelected = (raw) => {
 
 export default function CheckoutPage() {
   const headings = useSite()["content.pages"];
-  const { user, checking, cart } = useSession();
+  const { user, checking, cart, refreshCart } = useSession();
   const { products } = useProducts();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -92,6 +92,8 @@ export default function CheckoutPage() {
       window.location.assign(res.data.url);
     } catch (err) {
       setError(err.response?.data?.message || "We couldn't start checkout. Please try again.");
+      // Not enough stock: the server trimmed the cart, so show the new quantities.
+      if (err.response?.status === 409) refreshCart?.();
       setPlacing(false);
     }
   };

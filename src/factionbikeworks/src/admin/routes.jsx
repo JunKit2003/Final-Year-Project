@@ -5,6 +5,9 @@ import RequireAdmin from "./RequireAdmin";
 import Placeholder from "./pages/Placeholder";
 
 const AdminLayout = lazy(() => import("./AdminLayout"));
+const ProductsList = lazy(() => import("./pages/products/ProductsList"));
+const ProductEditor = lazy(() => import("./pages/products/ProductEditor"));
+const StockLog = lazy(() => import("./pages/stock/StockLog"));
 
 const P = (title) => <Placeholder title={title} />;
 
@@ -21,10 +24,10 @@ export function adminRoutes() {
       <Route index element={P("Dashboard")} />
       <Route path="orders" element={P("Orders")} />
       <Route path="orders/:id" element={P("Order")} />
-      <Route path="products" element={P("Products")} />
-      <Route path="products/new" element={P("New product")} />
-      <Route path="products/:id" element={P("Product")} />
-      <Route path="stock" element={P("Stock")} />
+      <Route path="products" element={<ProductsList />} />
+      <Route path="products/new" element={<ProductEditor />} />
+      <Route path="products/:id" element={<ProductEditor />} />
+      <Route path="stock" element={<StockLog />} />
       <Route path="taxonomy" element={P("Categories & brands")} />
       <Route path="banners" element={P("Banners")} />
       <Route path="brands" element={P("Brands")} />

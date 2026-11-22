@@ -33,10 +33,12 @@ export const priceRange = (product) => {
 export const totalStock = (product) =>
   (product?.variations || []).reduce((sum, v) => sum + Math.max(0, Number(v.stock) || 0), 0);
 
-export const stockState = (stock) => {
+/** "Only N left" at or under the product's low-stock threshold (default 3). */
+export const stockState = (stock, threshold = 3) => {
   const s = Number(stock) || 0;
+  const t = Number.isFinite(Number(threshold)) ? Number(threshold) : 3;
   if (s <= 0) return { key: "out", label: "Out of stock" };
-  if (s <= 3) return { key: "low", label: `Only ${s} left` };
+  if (s <= t) return { key: "low", label: `Only ${s} left` };
   return { key: "in", label: "In stock" };
 };
 
@@ -103,8 +105,8 @@ export const filterProducts = (products, opts = {}) => {
     case "name":
       return list.sort((a, b) => a.name.localeCompare(b.name));
     default:
-      // Featured: in-stock first, then newest (highest id).
-      return list.sort((a, b) => (totalStock(b) > 0) - (totalStock(a) > 0) || b.id - a.id);
+      // Featured: products marked featured first, then in-stock, then newest (highest id).
+      return list.sort((a, b) => !!b.featured - !!a.featured || (totalStock(b) > 0) - (totalStock(a) > 0) || b.id - a.id);
   }
 };
 
@@ -127,4 +129,18 @@ export const ORDER_STEPS = ["Pending", "Paid", "Shipped", "Completed"];
 export const orderProgress = (status) => {
   if (status === "Cancelled") return -1;
   return Math.max(0, ORDER_STEPS.indexOf(status));
+};
+
+/** The old price to strike through, when a variant is on sale (compareAtPrice above price). */
+export const wasPrice = (variation) => {
+  const was = toNumber(variation?.compareAtPrice);
+  return was > toNumber(variation?.price) ? was : null;
+};
+
+/** Cheapest variant's sale info for cards: { price, was } (was is null when not on sale). */
+export const cardPrice = (product) => {
+  const vars = (product?.variations || []).filter((v) => toNumber(v.price) > 0);
+  if (!vars.length) return { price: 0, was: null };
+  const cheapest = vars.reduce((a, b) => (toNumber(b.price) < toNumber(a.price) ? b : a));
+  return { price: toNumber(cheapest.price), was: wasPrice(cheapest) };
 };
