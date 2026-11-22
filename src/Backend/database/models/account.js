@@ -124,7 +124,9 @@ export default (sequelize, DataTypes) => {
     password_reset_token_expiration: {
       type: DataTypes.DATE,
       allowNull: true,
-    }
+    },
+    // Deactivated accounts can't sign in (and admins lose admin access).
+    isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   }, {
     sequelize,
     modelName: 'Account',

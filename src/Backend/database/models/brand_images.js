@@ -1,7 +1,5 @@
 // Sequelize model for the BrandImages table
 
-import { ValidationError } from "sequelize";
-import { snakeCaseToNormalCase } from "../../utils.js";
 
 export default (sequelize, DataTypes) => {
   const BrandImages = sequelize.define(
@@ -35,6 +33,7 @@ export default (sequelize, DataTypes) => {
           notEmpty: { msg: "Image path must not be empty!" },
         },
       },
+      position: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
       isVisible: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -53,21 +52,6 @@ export default (sequelize, DataTypes) => {
       tableName: "brand_images",
     }
   );
-
-  // Hooks for validation or other logic
-  BrandImages.beforeUpdate(async (brandImage, options) => {
-    for (const key of options.fields) {
-      const oldValue = brandImage.previous(key);
-      const newValue = brandImage.getDataValue(key);
-
-      // Check if the newValue is unchanged
-      if (newValue === oldValue) {
-        throw new ValidationError(`${key} is unchanged!`, [
-          { message: `${snakeCaseToNormalCase(key)} is unchanged!` },
-        ]);
-      }
-    }
-  });
 
   return BrandImages;
 };

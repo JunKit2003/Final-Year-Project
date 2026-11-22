@@ -1,5 +1,3 @@
-import { ValidationError } from "sequelize";
-import { snakeCaseToNormalCase } from "../../utils.js";
 
 // Sequelize model for the banner images table
 export default (sequelize, DataTypes) => {
@@ -19,6 +17,10 @@ export default (sequelize, DataTypes) => {
                     notEmpty: { msg: "Directory must not be empty!" },
                 },
             },
+            position: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+            alt: { type: DataTypes.STRING(200), allowNull: true },
+            linkUrl: { type: DataTypes.STRING(300), allowNull: true },
+            isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
         },
         {
             sequelize,
@@ -26,39 +28,6 @@ export default (sequelize, DataTypes) => {
             tableName: "banner_image", // Use the correct table name here
         }
     );
-
-    // beforeUpdate hook to validate unchanged fields
-    BannerImage.beforeUpdate(async (banner, options) => {
-        if (options.hasImageChanges === "true") {
-            return; // Skip the validation if hasImageChanges is true
-        }
-
-        if (!options.fields || options.fields.length === 0) {
-            throw new ValidationError("No fields were updated.", [
-                {
-                    message: "No fields were changed, update is invalid!",
-                },
-            ]);
-        }
-
-        // Iterate over fields that are being updated
-        for (const key of options.fields) {
-            const oldValue = banner.previous(key); // Get the previous value
-            const newValue = banner.getDataValue(key); // Get the new value
-
-            // If the field hasn't changed, throw a validation error
-            if (newValue === oldValue) {
-                throw new ValidationError(
-                    `${snakeCaseToNormalCase(key)} is unchanged!`,
-                    [
-                        {
-                            message: `${snakeCaseToNormalCase(key)} is unchanged!`,
-                        },
-                    ]
-                );
-            }
-        }
-    });
 
     return BannerImage; // Return the model
 };
