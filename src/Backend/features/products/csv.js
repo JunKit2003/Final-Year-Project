@@ -3,13 +3,15 @@
 //   new SKU + product_id   -> add a variant to that product
 //   new SKU, no product_id -> rows grouped by product_name + brand become new DRAFT products
 // Variants missing from the file are left alone. Stock differences are recorded as "import".
+// stock_at_export is the stock when the file was exported: if it has moved since (a sale, a
+// checkout hold), that line's stock is not applied, so an old file can't undo sales.
 import { db } from "../../database/index.js";
 import { adjustStock } from "../stock/service.js";
 import { logActivity } from "../activity/service.js";
 import { ValidationError } from "../http.js";
 import { parseCsv } from "../csv.js";
 
-export const COLUMNS = ["product_id", "product_name", "brand", "category", "status", "featured", "description", "variant_name", "sku", "price", "compare_at_price", "stock", "intended_use"];
+export const COLUMNS = ["product_id", "product_name", "brand", "category", "status", "featured", "description", "variant_name", "sku", "price", "compare_at_price", "stock", "stock_at_export", "intended_use"];
 const STATUSES = ["draft", "live", "archived"];
 
 export async function exportRows() {
@@ -20,7 +22,7 @@ export async function exportRows() {
   const rows = [COLUMNS];
   for (const p of products) {
     for (const v of p.variations) {
-      rows.push([p.id, p.name, p.brand, p.category, p.status, p.featured ? "yes" : "no", p.description || "", v.name, v.sku, Number(v.price).toFixed(2), v.compareAtPrice === null ? "" : Number(v.compareAtPrice).toFixed(2), v.stock, v.intendedUse || ""]);
+      rows.push([p.id, p.name, p.brand, p.category, p.status, p.featured ? "yes" : "no", p.description || "", v.name, v.sku, Number(v.price).toFixed(2), v.compareAtPrice === null ? "" : Number(v.compareAtPrice).toFixed(2), v.stock, v.stock, v.intendedUse || ""]);
     }
   }
   return rows;
@@ -40,7 +42,8 @@ export async function planImport(text) {
   }
   const at = (r, name) => {
     const i = header.indexOf(name);
-    return i < 0 ? undefined : String(r[i] ?? "").trim();
+    // Our export prefixes text starting with = + - @ with an apostrophe (spreadsheet safety).
+    return i < 0 ? undefined : String(r[i] ?? "").trim().replace(/^'(?=[=+\-@])/, "");
   };
   const has = (name) => header.includes(name);
 
@@ -75,11 +78,17 @@ export async function planImport(text) {
     if (featuredRaw && !(featuredRaw in BOOL)) return fail("featured must be yes or no");
     const name = at(r, "variant_name");
     if (!name) return fail("variant_name is required");
+    for (const [col, max] of [["product_name", 100], ["brand", 100], ["category", 50], ["variant_name", 100], ["sku", 64], ["intended_use", 1000], ["description", 5000]]) {
+      if ((at(r, col) || "").length > max) return fail(`${col} must be ${max} characters or fewer`);
+    }
+    const sawRaw = at(r, "stock_at_export") ?? "";
+    const stockAtExport = sawRaw === "" ? null : /^\d+$/.test(sawRaw) ? Number(sawRaw) : NaN;
+    if (Number.isNaN(stockAtExport)) return fail("stock_at_export must be a whole number");
     const pidRaw = at(r, "product_id") ?? "";
     const pid = pidRaw ? Number(pidRaw) : null;
     if (pidRaw && !(Number.isInteger(pid) && pid > 0)) return fail("product_id must be a number");
 
-    const variant = { name, sku, price, compareAtPrice: cmp, stock, intendedUse: has("intended_use") ? at(r, "intended_use") || null : undefined };
+    const variant = { name, sku, price, compareAtPrice: cmp, stock, stockAtExport, intendedUse: has("intended_use") ? at(r, "intended_use") || null : undefined };
     const product = {
       name: at(r, "product_name") || undefined,
       brand: at(r, "brand") || undefined,
@@ -97,12 +106,16 @@ export async function planImport(text) {
       if (!sameMoney(variant.price, ex.price)) changes.push("price");
       if (!sameMoney(variant.compareAtPrice, ex.compareAtPrice)) changes.push("was price");
       if (variant.intendedUse !== undefined && (variant.intendedUse || null) !== (ex.intendedUse || null)) changes.push("intended use");
-      if (stock !== null && stock !== ex.stock) changes.push(`stock ${ex.stock} → ${stock}`);
+      let stockNote = null;
+      if (stock !== null && stockAtExport !== null && stockAtExport !== ex.stock) {
+        stockNote = `stock not changed: it moved from ${stockAtExport} to ${ex.stock} since the export`;
+        variant.stock = null;
+      } else if (stock !== null && stock !== ex.stock) changes.push(`stock ${ex.stock} → ${stock}`);
       const p = ex.product;
       for (const [k, labelText] of [["name", "product name"], ["brand", "brand"], ["category", "category"], ["status", "status"], ["featured", "featured"], ["description", "description"]]) {
         if (product[k] !== undefined && product[k] !== (k === "description" ? p[k] || "" : p[k])) changes.push(labelText);
       }
-      lines.push({ line, sku, action: changes.length ? "update" : "unchanged", changes, variationId: ex.id, productId: ex.productId, variant, product });
+      lines.push({ line, sku, action: changes.length ? "update" : "unchanged", changes, message: stockNote || undefined, expectedStock: ex.stock, variationId: ex.id, productId: ex.productId, variant, product });
     } else if (pid) {
       if (!products.has(pid)) return fail(`product ${pid} doesn't exist`);
       lines.push({ line, sku, action: "create_variant", productId: pid, variant, product: {} });
@@ -139,7 +152,9 @@ export async function applyImport(text, actor) {
         }
         if (v.stock !== null) {
           const cur = await db.Variations.findByPk(l.variationId, { transaction, lock: transaction.LOCK.UPDATE });
-          if (cur.stock !== v.stock) await adjustStock({ variationId: l.variationId, delta: v.stock - cur.stock, reason: "import", note: "CSV import", actor }, { transaction });
+          // Only apply when stock is still what the plan saw (and, if given, what was exported).
+          const expected = v.stockAtExport ?? l.expectedStock;
+          if (cur.stock === expected && cur.stock !== v.stock) await adjustStock({ variationId: l.variationId, delta: v.stock - cur.stock, reason: "import", note: "CSV import", actor }, { transaction });
         }
       } else if (l.action === "create_variant" || l.action === "create_product") {
         let productId = l.productId;

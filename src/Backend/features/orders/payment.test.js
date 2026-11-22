@@ -8,6 +8,7 @@ const { fake, client } = await import("../../test/fakeStripe.js");
 const { default: routes } = await import("../../routes/routes.js");
 const { db } = await import("../../database/index.js");
 const { releaseExpiredHolds, handleStripeEvent, markPaid } = await import("./payment.js");
+const { adjustStock } = await import("../stock/service.js");
 const { stripeWebhook } = await import("./webhook.js");
 const { appAs, makeAccount, makeProduct, resetTables } = await import("../../test/helpers.js");
 
@@ -105,6 +106,28 @@ describe("checkout holds and payment", () => {
     const res = await request(as(shopper)).post("/api/cart/createOrder").send(body(shopper, [{ variation_id: blue.id, quantity: 1 }]));
     fake.pay(res.body.sessionId);
     await expect(markPaid(res.body.sessionId, { source: "redirect", userId: other.id })).rejects.toThrow();
+  });
+
+  it("ignores a paid session that belongs to a different checkout of the same order id", async () => {
+    const res = await request(as(shopper)).post("/api/cart/createOrder").send(body(shopper, [{ variation_id: blue.id, quantity: 1 }]));
+    const stranger = { ...fake.pay(res.body.sessionId), id: "cs_other_install" };
+    await handleStripeEvent({ id: "evt_x", type: "checkout.session.completed", data: { object: stranger } });
+    expect((await db.Order.findOne()).status).toBe("Pending");
+    expect(await db.StripeEvent.count()).toBe(1);
+  });
+
+  it("a late payment after the stock sold elsewhere doesn't create stock on cancel", async () => {
+    const { cancelOrder } = await import("./service.js");
+    const res = await request(as(shopper)).post("/api/cart/createOrder").send(body(shopper, [{ variation_id: red.id, quantity: 1 }]));
+    await releaseExpiredHolds(new Date(Date.now() + 36 * 60000)); // hold released, red back to 1
+    await db.sequelize.transaction((t) => adjustStock({ variationId: red.id, delta: -1, reason: "count_correction" }, { transaction: t })); // sold in the shop
+    const session = fake.pay(res.body.sessionId);
+    await handleStripeEvent({ id: "evt_late", type: "checkout.session.completed", data: { object: session } });
+    const order = await db.Order.findOne();
+    expect(order.status).toBe("Paid");
+    expect(await stockOf(red.id)).toBe(0);
+    await cancelOrder(order.id, { version: order.version, reason: "Out of stock", refundAmount: 0, restock: true }, { id: 1, username: "Admin" });
+    expect(await stockOf(red.id)).toBe(0);
   });
 
   it("processes a webhook event once", async () => {

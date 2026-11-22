@@ -96,7 +96,7 @@ export function toPayload(s) {
     lowStockThreshold: num(s.lowStockThreshold) ?? 0,
     specs: s.specs.filter((x) => x.label.trim() || x.value.trim()).map((x) => ({ label: x.label.trim(), value: x.value.trim() })),
     variations: s.variations.map((v, i) => ({
-      ...(v.id ? { id: v.id } : { stock: num(v.stock) ?? 0 }),
+      ...(v.id ? { id: v.id, version: v.version } : { stock: num(v.stock) ?? 0 }),
       name: v.name.trim(),
       sku: v.sku.trim(),
       price: num(v.price),

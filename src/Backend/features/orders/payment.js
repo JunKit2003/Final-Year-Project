@@ -23,18 +23,28 @@ export async function addOrderEvent(orderId, fields, { transaction } = {}) {
   return db.OrderEvent.create({ orderId, ...fields, actorId: fields.actor?.id ?? fields.actorId ?? null, actorName: fields.actor?.username ?? fields.actorName ?? null }, { transaction });
 }
 
-/** Give back the stock held by an order's lines (once per line). */
-export async function releaseHold(order, { transaction, actor = null }) {
+/** Units an order line currently has off the shelf: minus the sum of its movements. */
+export async function heldFor(orderItemId, { transaction }) {
+  const sum = await db.StockMovement.sum("delta", { where: { orderItemId }, transaction });
+  return Math.max(0, -(Number(sum) || 0));
+}
+
+/**
+ * Put back whatever an order's lines still hold, recorded as `reason` (hold_released for an
+ * abandoned checkout, cancel_restock for a cancelled order). Never returns more than was taken.
+ */
+export async function returnHeldStock(order, { transaction, actor = null, reason = "hold_released" }) {
   const items = order.items || (await db.OrderItem.findAll({ where: { orderId: order.id }, transaction }));
   for (const item of items) {
     if (!item.variationId) continue;
-    const held = await db.StockMovement.findOne({ where: { orderItemId: item.id, reason: "checkout_hold" }, transaction });
+    const held = await heldFor(item.id, { transaction });
     if (!held) continue;
-    const released = await db.StockMovement.findOne({ where: { orderItemId: item.id, reason: "hold_released" }, transaction });
-    if (released) continue;
-    await adjustStock({ variationId: item.variationId, delta: -held.delta, reason: "hold_released", orderId: order.id, orderItemId: item.id, actor }, { transaction });
+    if (await db.StockMovement.findOne({ where: { orderItemId: item.id, reason }, transaction })) continue;
+    await adjustStock({ variationId: item.variationId, delta: held, reason, orderId: order.id, orderItemId: item.id, actor }, { transaction });
   }
 }
+
+export const releaseHold = (order, opts) => returnHeldStock(order, { ...opts, reason: "hold_released" });
 
 /**
  * Validate the cart lines, hold stock and create a Pending order, then open a Stripe
@@ -67,7 +77,8 @@ export async function startCheckout({ userId, items, shippingAddress, recipientN
       const total = money([...qty].reduce((sum, [id, q]) => sum + Number(byId.get(id).price) * q, 0));
       const created = await db.Order.create({ userId, shippingAddress, recipientName, phoneNumber, totalAmount: total, status: "Pending" }, { transaction });
       created.items = [];
-      for (const [id, q] of qty) {
+      // Lock rows in a fixed (id) order so two carts can't deadlock each other.
+      for (const [id, q] of [...qty].sort((x, y) => x[0] - y[0])) {
         const v = byId.get(id);
         const item = await db.OrderItem.create(
           { orderId: created.id, variationId: id, quantity: q, price: v.price, productName: v.product.name, variationName: v.name, sku: v.sku },
@@ -109,7 +120,8 @@ export async function startCheckout({ userId, items, shippingAddress, recipientN
       })),
       success_url: `${base}/paymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/paymentFailed?session_id={CHECKOUT_SESSION_ID}`,
-      expires_at: Math.floor(Date.now() / 1000) + HOLD_MINUTES * 60,
+      // Stripe needs at least 30 minutes; 31 leaves room for clock drift. The sweep waits 35.
+      expires_at: Math.floor(Date.now() / 1000) + (HOLD_MINUTES + 1) * 60,
       metadata: { orderId: String(order.id), userId: String(userId) },
     });
   } catch (error) {
@@ -138,6 +150,12 @@ export async function markPaidFromSession(session, { source, userId = null } = {
   return db.sequelize.transaction(async (transaction) => {
     const order = await db.Order.findByPk(orderId, { include: [{ model: db.OrderItem, as: "items" }], transaction, lock: transaction.LOCK.UPDATE });
     if (!order || (userId != null && String(order.userId) !== String(userId))) throw new ValidationError({}, `No pending order found for user with ID ${userId}.`);
+    // A session can only pay for the order it was opened for (test keys are shared between
+    // environments, so another install's event can carry the same order id).
+    if (order.stripeSessionId && order.stripeSessionId !== session.id) {
+      console.warn(`Ignoring Stripe session ${session.id}: order ${orderId} belongs to session ${order.stripeSessionId}.`);
+      throw new ValidationError({}, "This payment doesn't belong to that order.");
+    }
     if (order.status !== "Pending" && order.status !== "Cancelled") return { order, changed: false };
     if (order.status === "Cancelled" && Number(order.paidAmount) > 0) return { order, changed: false };
 
@@ -148,9 +166,10 @@ export async function markPaidFromSession(session, { source, userId = null } = {
       for (const item of order.items) {
         if (!item.variationId) continue;
         try {
-          const released = await db.StockMovement.findOne({ where: { orderItemId: item.id, reason: "hold_released" }, transaction });
-          if (released) {
-            await adjustStock({ variationId: item.variationId, delta: -item.quantity, reason: "count_correction", orderId: order.id, note: "Re-held: paid after checkout expired" }, { transaction });
+          const missing = item.quantity - (await heldFor(item.id, { transaction }));
+          if (missing > 0) {
+            // Tied to the line, so a later cancel restocks exactly what was re-held.
+            await adjustStock({ variationId: item.variationId, delta: -missing, reason: "count_correction", orderId: order.id, orderItemId: item.id, note: "Re-held: paid after checkout expired" }, { transaction });
           }
         } catch (error) {
           if (!(error instanceof InsufficientStockError)) throw error;
@@ -160,6 +179,8 @@ export async function markPaidFromSession(session, { source, userId = null } = {
       note = short ? "Paid after checkout expired. Some items are out of stock: check before shipping." : "Paid after checkout expired";
     }
 
+    const charged = session.amount_total ?? Math.round(Number(order.totalAmount) * 100);
+    if (Math.abs(charged - Math.round(Number(order.totalAmount) * 100)) > 0) note += `. Stripe charged RM ${(charged / 100).toFixed(2)}, order total RM ${Number(order.totalAmount).toFixed(2)}: check before shipping.`;
     const from = order.status;
     await order.update(
       {
@@ -229,7 +250,14 @@ export async function handleStripeEvent(event) {
   if (await db.StripeEvent.findByPk(event.id)) return { duplicate: true };
   const session = event.data?.object;
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
-    if (session?.payment_status === "paid") await markPaidFromSession(session, { source: "webhook" });
+    if (session?.payment_status === "paid") {
+      try {
+        await markPaidFromSession(session, { source: "webhook" });
+      } catch (error) {
+        // Not ours (unknown or mismatched order): record it so Stripe stops resending.
+        if (!(error instanceof ValidationError)) throw error;
+      }
+    }
   } else if (event.type === "checkout.session.expired") {
     const orderId = Number(session?.metadata?.orderId);
     if (orderId) await cancelPending(orderId, { note: "Checkout expired" });

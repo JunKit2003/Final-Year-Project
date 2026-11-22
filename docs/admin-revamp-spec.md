@@ -3,7 +3,7 @@
 **Product:** Faction Bikeworks web store
 **Parent:** none (no work item)
 **Date:** 2026-11-22
-**Status:** Draft, awaiting approval
+**Status:** Built (Stripe paths tested against a fake; one real test-mode pass still to do)
 
 Design doc: [plans/2026-11-22-admin-revamp-design.md](plans/2026-11-22-admin-revamp-design.md)
 
@@ -429,7 +429,7 @@ Feature: Site content
 **AD07-AC2: Hours drive the open badge.** Opening times per weekday, closed days and dated closures (with a reason) drive "Open now", "Closed now" and "Closed today: <reason>" in Malaysia time.
 **AD07-AC3: SEO and chatbot.** Page titles, meta description, chatbot URL and the floating chat button toggle are editable.
 **AD07-AC4: Theme with a readability check.** Accent, accent-ink and hot colours per mode, with a live swatch. The save is refused below a 4.5 contrast ratio for text on accent or accent text on the page.
-**AD07-AC5: Email wording.** Password reset, order shipped, cancelled and refunded emails have editable subject and body with `{{name}}`, `{{link}}`, `{{orderId}}`, `{{shopName}}` placeholders. Unknown placeholders are refused.
+**AD07-AC5: Email wording.** Password reset, order shipped, cancelled and refunded emails have editable subject and body with `{{name}}`, `{{code}}`, `{{orderId}}`, `{{shopName}}` (plus `{{courier}}`, `{{trackingNumber}}`, `{{amount}}` where they apply) placeholders. Unknown placeholders are refused.
 
 ### Gherkin specifications
 

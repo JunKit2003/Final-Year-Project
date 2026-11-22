@@ -4,11 +4,10 @@
 import { Op, literal } from "sequelize";
 import { db } from "../../database/index.js";
 import { getStripe } from "../../config/stripe.js";
-import { adjustStock } from "../stock/service.js";
 import { logActivity } from "../activity/service.js";
 import { sendTemplated, EMAIL_LABELS } from "../email/send.js";
 import { ConflictError, NotFoundError, ValidationError, VersionConflictError } from "../http.js";
-import { addOrderEvent, releaseHold } from "./payment.js";
+import { addOrderEvent, releaseHold, returnHeldStock } from "./payment.js";
 
 const ORDER_CONFLICT = "Someone else changed this order since you opened it. Reload to see their changes.";
 export const TRANSITIONS = { ship: ["Paid"], complete: ["Shipped"], reopen: ["Completed"], cancel: ["Pending", "Paid", "Shipped"] };
@@ -209,11 +208,8 @@ export async function cancelOrder(id, { version, reason, refundAmount = 0, resto
       await releaseHold(o, { transaction, actor });
       sessionToExpire = o.stripeSessionId;
     } else if (restock) {
-      for (const item of o.items) {
-        if (!item.variationId) continue;
-        const done = await db.StockMovement.findOne({ where: { orderItemId: item.id, reason: "cancel_restock" }, transaction });
-        if (!done) await adjustStock({ variationId: item.variationId, delta: item.quantity, reason: "cancel_restock", orderId: id, orderItemId: item.id, actor }, { transaction });
-      }
+      // Only what each line actually holds goes back (a late payment may not have got stock).
+      await returnHeldStock(o, { transaction, actor, reason: "cancel_restock" });
     }
     await o.update({ status: "Cancelled", version: o.version + 1 }, { transaction });
     await addOrderEvent(id, { type: "status", fromStatus: prev, toStatus: "Cancelled", note: why, actor }, { transaction });
@@ -223,7 +219,11 @@ export async function cancelOrder(id, { version, reason, refundAmount = 0, resto
   await logActivity({ actor, action: "order.cancel", entity: "order", entityId: id, summary: `Cancelled order #${id}: ${why}` });
   let refund = null;
   if (amount > 0) refund = await requestRefund(id, { amount, reason: why, actor, checkVersion: false, emailOnSuccess: false });
-  if (before.prev !== "Pending") await notify(id, "orderCancelled", { amount: rm(amount) });
+  if (before.prev !== "Pending") {
+    // Only promise money that has actually gone back (or is on its way).
+    const told = !refund ? "RM 0.00" : refund.status === "succeeded" ? rm(amount) : refund.status === "pending" ? `${rm(amount)} (being processed)` : "RM 0.00 (we'll be in touch about your refund)";
+    await notify(id, "orderCancelled", { amount: told });
+  }
   return { refund };
 }
 
@@ -266,6 +266,22 @@ async function applyRefundOutcome(refundId, status, { stripeRefundId = null, err
 /** Errors that mean Stripe definitely didn't refund (as opposed to a lost response). */
 const definitive = (e) => ["StripeCardError", "StripeInvalidRequestError", "StripePermissionError"].includes(e?.type);
 
+/**
+ * The exact refund request for a refund row. The first attempt and every retry must send
+ * identical parameters with the same idempotency key, or Stripe rejects the retry.
+ */
+export const refundRequest = (orderId, refundId, intent, amount) => [
+  { payment_intent: intent, amount: Math.round(n(amount) * 100), metadata: { orderId: String(orderId), refundId: String(refundId) } },
+  { idempotencyKey: `refund-${refundId}` },
+];
+
+/** A refund Stripe already made for this row (found by our metadata), if any. */
+async function findStripeRefund(stripe, intent, refundId) {
+  if (!stripe.refunds.list) return null;
+  const list = await stripe.refunds.list({ payment_intent: intent, limit: 100 });
+  return (list?.data || []).find((x) => x.metadata?.refundId === String(refundId)) || null;
+}
+
 export async function requestRefund(id, { amount, reason, version, actor, checkVersion = true, emailOnSuccess = true }) {
   const amt = n(amount);
   const why = String(reason || "").trim();
@@ -289,7 +305,7 @@ export async function requestRefund(id, { amount, reason, version, actor, checkV
   // Outside the transaction: the row id is the idempotency key, so a retry is safe.
   let outcome;
   try {
-    const s = await getStripe().refunds.create({ payment_intent: intent, amount: Math.round(amt * 100), metadata: { orderId: String(id), refundId: String(refund.id) } }, { idempotencyKey: `refund-${refund.id}` });
+    const s = await getStripe().refunds.create(...refundRequest(id, refund.id, intent, amt));
     outcome = await applyRefundOutcome(refund.id, OUTCOME[s.status] || "pending", { stripeRefundId: s.id });
   } catch (error) {
     outcome = definitive(error) ? await applyRefundOutcome(refund.id, "failed", { error: error.message }) : await refund.reload();
@@ -316,12 +332,15 @@ export async function reconcilePendingRefunds({ orderId } = {}) {
       let s;
       if (r.stripeRefundId) s = await stripe.refunds.retrieve(r.stripeRefundId);
       else {
+        // The first reply was lost. Look for the refund Stripe may already have made, and
+        // only then retry with exactly the same request (same key, same parameters).
         const o = await db.Order.findByPk(r.orderId, { attributes: ["stripePaymentIntentId"] });
-        s = await stripe.refunds.create({ payment_intent: o.stripePaymentIntentId, amount: Math.round(n(r.amount) * 100) }, { idempotencyKey: `refund-${r.id}` });
+        s = (await findStripeRefund(stripe, o.stripePaymentIntentId, r.id)) || (await stripe.refunds.create(...refundRequest(r.orderId, r.id, o.stripePaymentIntentId, r.amount)));
       }
       const status = OUTCOME[s?.status] || "pending";
       await applyRefundOutcome(r.id, status, { stripeRefundId: s?.id });
       if (status !== "pending") settled++;
+      if (status === "succeeded") await notify(r.orderId, "orderRefunded", { amount: rm(r.amount) });
     } catch (error) {
       if (definitive(error)) {
         await applyRefundOutcome(r.id, "failed", { error: error.message });

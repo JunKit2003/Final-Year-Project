@@ -169,6 +169,11 @@ export async function updateProduct(id, body, actor) {
   await db.sequelize.transaction(async (transaction) => {
     const p = await db.Products.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
     if (p.version !== Number(body.version)) throw new VersionConflictError(PRODUCT_CONFLICT);
+    // A quick price edit from the list bumps the variant's version: don't overwrite it.
+    for (const v of value.variations.filter((x) => x.id && x.version !== null)) {
+      const cur = existing.variations.find((e) => e.id === v.id);
+      if (cur && cur.version !== v.version) throw new VersionConflictError(PRODUCT_CONFLICT);
+    }
     await p.update({ ...productFields(value), version: p.version + 1 }, { transaction });
     const keep = new Set(value.variations.filter((v) => v.id).map((v) => v.id));
     await removeVariations(existing.variations.filter((v) => !keep.has(v.id)), transaction);

@@ -64,6 +64,7 @@ export async function validateProduct(body, { productId = null, existingIds = ne
       intendedUse: v?.intendedUse ? String(v.intendedUse).trim() : null,
       position: i,
       stock: num(v?.stock),
+      version: v?.version === undefined ? null : Number(v.version),
     };
     if (!out.name) errors[`${p}.name`] = "Variant name is required";
     else if (out.name.length > 100) errors[`${p}.name`] = "Keep it under 100 characters";

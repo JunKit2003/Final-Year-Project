@@ -110,6 +110,21 @@ describe("admin orders", () => {
     expect(d.refunds[0].status).toBe("succeeded");
   });
 
+  it("a lost reply is settled by the re-check without a second refund", async () => {
+    const { order } = await paidOrder();
+    fake.loseNextRefundReply = true;
+    let d = await detail(order.id);
+    const res = await request(admin).post(`/api/admin/orders/${order.id}/refunds`).send({ amount: 100, reason: "a", version: d.order.version });
+    expect(res.body.refund.status).toBe("pending");
+    // Opening the order (the response above, and this) re-checks with Stripe.
+    await reconcilePendingRefunds();
+    d = await detail(order.id);
+    expect(d.refunds[0].status).toBe("succeeded");
+    expect(fake.refunds.size).toBe(1);
+    expect(d.order.refundable).toBe(678);
+    expect(transporter.sendMail.mock.calls.at(-1)[0].subject).toBe(`Refund for order #${order.id}`);
+  });
+
   it("gives the money back when Stripe declines the refund", async () => {
     const { order } = await paidOrder();
     fake.failRefund = true;

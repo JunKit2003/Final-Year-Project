@@ -76,7 +76,7 @@ The admin panel was built during the original final-year project, under time pre
 ### The rules that fall out of this
 
 - **The storefront never breaks on missing settings.** `/api/site` returns stored values deep-merged over defaults. The frontend boots with bundled defaults and swaps in the fetched values, so first paint never waits on the API.
-- **Validation lives in the schema.** Each settings group declares fields (type, max length, required, allowed values). The backend rejects unknown keys and bad values with a 400 that names the field. The admin form is generated from the same declarations.
+- **Validation lives in the schema.** Each settings group declares fields (type, max length, required, allowed values). The backend drops unknown keys and rejects bad values with a 400 that names the field. The admin form is generated from the same declarations.
 - **Things that have been ordered are never hard-deleted.** A product or variation referenced by an order line can only be archived. Delete is offered only when nothing references it. Archived products vanish from the storefront but stay in the admin under an "Archived" filter.
 - **Drafts are invisible to shoppers.** Public product endpoints return `live` only. `/viewProduct/:id` for a draft or archived product shows the 404 page to shoppers and the product, with a banner, to admins.
 - **Migrations are forward-only and idempotent.** Each one checks whether its change already exists, so it's safe on the live database and on a fresh one. The image migration moves files from `<productId>/<sku>/` to `<productId>/<variationId>/` and creates `product_media` rows. It logs every file it can't map and leaves those files in place.
@@ -136,13 +136,13 @@ The admin panel was built during the original final-year project, under time pre
 | `POST /api/product/get` | Returns `live` products only; adds `featured`, `specs`, `compareAtPrice`, and images from `product_media` (same `images.files` shape) |
 | `POST /api/banner/get`, `POST /api/product/getBrandImages` | Active/visible only, in `position` order, with `alt`/`linkUrl` |
 | `POST /api/account/login` | Refuses inactive accounts with the same message as a wrong password |
-| `POST /api/account/requestPasswordReset` | Subject and body come from the `emails` settings (`{{name}}`, `{{link}}` placeholders) |
+| `POST /api/account/requestPasswordReset` | Subject and body come from the `emails` settings (`{{name}}`, `{{code}}`, `{{shopName}}` placeholders; the reset flow sends a code, not a link) |
 | `POST /api/cart/markOrderPaidAndClearCart` | Shares one "mark paid" function with the webhook (whichever comes first wins, the other is a no-op). Saves the payment intent and paid amount, writes an `order_events` row |
 | `POST /api/cart/createOrder` | Holds stock (refuses the whole order if any line is short), writes the order-line snapshot, saves `stripeSessionId`, and sets a 30-minute session expiry |
 | `DELETE /api/cart/cancelOrder` | Releases the hold for a Pending order instead of only deleting it |
 | Old admin writes (`/product/add\|edit\|delete`, `/banner/add\|delete`, `/product/updateBrandImage`, `/cart/getOrders`, `/cart/fulfillOrders`) | Removed once the new admin replaces them, along with their tests |
 
-Migrations (stock: `010-stock-movements` adds the table plus one `initial` movement per variant, so history starts from today's counts): `001-baseline`, `002-order-item-snapshot`, `003-product-status-and-variant-fields`, `004-product-media` (moves files), `005-site-settings`, `006-order-payments-refunds-events` (orders columns, `order_refunds`, `order_events`, `stripe_events`), `007-account-active`, `008-banner-brand-order`, `009-admin-activity`. Orders that predate `stripeSessionId` show "Refund in the Stripe dashboard" instead of the Refund button.
+Migrations (stock: `010-stock-movements` adds the table plus one `initial` movement per variant, so history starts from today's counts): `001-baseline`, `002-order-item-snapshot`, `003-product-status-and-variant-fields`, `004-product-media` (moves files), `005-site-settings`, `006-order-payments-refunds-events` (orders columns, `order_refunds`, `order_events`, `stripe_events`), `007-account-active`, `008-banner-brand-order` (admin_activity is a new table, created by sync alongside `005`). Orders that predate `stripeSessionId` show "Refund in the Stripe dashboard" instead of the Refund button.
 
 ## 4. Product-visible behaviour & copy
 
@@ -178,11 +178,13 @@ Dialogs:
 
 **Site content** (`/admin/content/:page`): pages Home, About, Footer & header, 404, Sign-in pages. Each section is a card with a "Show this section" toggle, its fields, and a preview of that section rendered with the draft values. Home has hero, brand wall, fresh-in, categories, promise strip (items with an icon from the site's icon set), numbers, and the visit section.
 
-**Shop settings** (`/admin/settings/:group`): Shop details (name, phone, WhatsApp, address, maps link, map embed URL, Facebook, Instagram, coordinates line, founded year), Hours (per weekday: open/close or closed, label text, closed dates with a reason), Chatbot (URL, show floating button), SEO (page titles, meta description), Theme (accent colours per mode, with a live swatch and contrast score), Emails (password reset, order shipped, order cancelled, order refunded: subject/body each, with a placeholder list: `{{name}}`, `{{link}}`, `{{orderId}}`, `{{shopName}}`).
+**Shop settings** (`/admin/settings/:group`): Shop details (name, phone, WhatsApp, address, maps link, map embed URL, Facebook, Instagram, coordinates line, founded year), Hours (per weekday: open/close or closed, label text, closed dates with a reason), Chatbot (URL, show floating button), SEO (page titles, meta description), Theme (accent colours per mode, with a live swatch and contrast score), Emails (password reset, order shipped, order cancelled, order refunded: subject/body each, with a placeholder list: `{{name}}`, `{{code}}`, `{{orderId}}`, `{{shopName}}`, `{{courier}}`, `{{trackingNumber}}`, `{{amount}}`).
 
 **Storefront:** product pages say "Only N left" at or under the product's threshold, and "Out of stock" at 0. Checkout errors say "Only N of <item> left. We've updated your cart." A sale shows the sale price with the old price struck through. Specs appear as a table on the product page. Featured products lead "Fresh off the truck". On a closed date the open badge says "Closed today: <reason>".
 
 ## 5. Known limitations
+
+- On the first start with a Stripe key, the sweep cancels any Pending orders left over from before checkout holds existed (older than 35 minutes, unpaid). Their stock is untouched, since it was never held.
 
 - No image resizing: large uploads are served as uploaded (5 MB cap).
 - Content edits go live on save. There is no draft/scheduled publishing for site content (products do have drafts).

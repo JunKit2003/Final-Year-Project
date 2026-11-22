@@ -87,6 +87,14 @@ describe("admin products", () => {
     expect(stale.body.message).toBe("Someone else saved this product since you opened it. Reload to see their changes.");
   });
 
+  it("an open editor can't overwrite a quick price edit", async () => {
+    const c = (await request(admin).post("/api/admin/products").send(payload())).body;
+    await request(admin).patch(`/api/admin/variations/${c.variations[0].id}`).send({ price: 350, version: c.variations[0].version });
+    const res = await request(admin).put(`/api/admin/products/${c.id}`).send({ ...payload(), version: c.version, variations: c.variations });
+    expect(res.status).toBe(409);
+    expect(Number((await db.Variations.findByPk(c.variations[0].id)).price)).toBe(350);
+  });
+
   it("swaps SKUs between two variants in one save", async () => {
     const c = (await request(admin).post("/api/admin/products").send(payload())).body;
     const [r, b] = c.variations;

@@ -5,14 +5,17 @@ import { NotFoundError, ValidationError, VersionConflictError } from "../http.js
 import { logActivity } from "../activity/service.js";
 
 let cache = null; // { site, etag }
+let generation = 0;
 
 export function invalidateSite() {
+  generation++;
   cache = null;
 }
 
 /** Merged site settings plus an ETag that changes on every save. */
 export async function getSiteWithEtag() {
   if (cache) return cache;
+  const started = generation;
   const rows = await db.SiteSetting.findAll();
   const stored = {};
   const stamp = [];
@@ -23,8 +26,10 @@ export async function getSiteWithEtag() {
   }
   const site = mergeSite(stored);
   const etag = `"${createHash("sha1").update(stamp.sort().join("|")).digest("hex").slice(0, 16)}"`;
-  cache = { site, etag };
-  return cache;
+  const fresh = { site, etag };
+  // A save that happened while this read ran wins: don't cache what may already be old.
+  if (started === generation) cache = fresh;
+  return fresh;
 }
 
 export const getSite = async () => (await getSiteWithEtag()).site;

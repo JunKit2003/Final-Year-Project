@@ -70,6 +70,27 @@ describe("product import/export", () => {
     expect(dry.body.summary).toMatchObject({ update: 0, createVariant: 0, createProduct: 0, error: 0 });
   });
 
+  it("won't undo a sale made after the export", async () => {
+    const exp = (await request(admin).get("/api/admin/products/export.csv")).text;
+    const v = await db.Variations.findOne({ where: { sku: "DMR-RED" } });
+    await v.update({ stock: 3 }); // sold one since the export
+    const edited = exp.replace(/,4,4,/, ",4,4,").replace("389.00", "399.00");
+    const dry = await upload(edited, true);
+    const line = dry.body.lines.find((l) => l.sku === "DMR-RED");
+    expect(line.message).toBe("stock not changed: it moved from 4 to 3 since the export");
+    await upload(edited, false);
+    const after = await db.Variations.findOne({ where: { sku: "DMR-RED" } });
+    expect(after.stock).toBe(3);
+    expect(Number(after.price)).toBe(399);
+  });
+
+  it("strips the export's formula guard on import", async () => {
+    await makeProduct({ name: "Minus", description: "-20% off", variations: [{ name: "One", sku: "M-1", price: 1, stock: 0 }] });
+    const exp = (await request(admin).get("/api/admin/products/export.csv")).text;
+    expect(exp).toContain("'-20% off");
+    expect((await upload(exp, true)).body.summary.update).toBe(0);
+  });
+
   it("explains a missing column", async () => {
     const res = await upload("name,price\nA,1", true);
     expect(res.status).toBe(400);

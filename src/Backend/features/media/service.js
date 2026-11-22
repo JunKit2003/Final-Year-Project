@@ -35,9 +35,15 @@ export async function addMedia(variationId, file) {
   const position = ((await db.ProductMedia.max("position", { where: { variationId } })) ?? -1) + 1;
   const m = await db.ProductMedia.create({ variationId, path: "pending", position });
   const rel = relFor(v.productId, variationId, m.id, ext);
-  fs.mkdirSync(path.dirname(abs(rel)), { recursive: true });
-  fs.writeFileSync(abs(rel), file.buffer);
-  await m.update({ path: rel });
+  try {
+    fs.mkdirSync(path.dirname(abs(rel)), { recursive: true });
+    fs.writeFileSync(abs(rel), file.buffer);
+    await m.update({ path: rel });
+  } catch (error) {
+    await m.destroy().catch(() => {});
+    fs.rmSync(abs(rel), { force: true });
+    throw error;
+  }
   return toMediaJSON(m);
 }
 
