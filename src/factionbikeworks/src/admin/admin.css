@@ -285,3 +285,5 @@ a.adm-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .adm-preview-stage .pdp-title { font-size: 26px; line-height: 1.05; }
 .adm-preview-stage .pdp-price { font-size: 24px; }
 .adm-preview-stage .pcard { max-width: 250px; margin: 0 auto; }
+.adm-preview-stage .hero { min-height: 760px; height: 760px; }
+.adm-preview-stage .center-screen { min-height: 520px; }

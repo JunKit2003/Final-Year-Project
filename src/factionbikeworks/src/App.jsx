@@ -3,7 +3,7 @@ import { Outlet, Route, RouterProvider, createBrowserRouter, createRoutesFromEle
 import { adminRoutes } from "./admin/routes";
 import { SessionProvider, ThemeModeProvider, ToastProvider } from "./lib/store";
 import { SiteProvider, titleFor, useSite } from "./lib/site";
-import { Markup, SmartLink } from "./components/ui/Markup";
+import { NotFoundBody } from "./components/sections/NotFound";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { ChatLauncher, Loader } from "./components/ui/Bits";
@@ -67,20 +67,6 @@ function BareLayout() {
           <Outlet />
         </Suspense>
       </main>
-    </div>
-  );
-}
-
-export function NotFoundBody({ content }) {
-  return (
-    <div className="center-screen page topo">
-      {content.kicker && <p className="kicker">{content.kicker}</p>}
-      <h1 className="display">
-        <Markup text={content.title} />
-      </h1>
-      <SmartLink to={content.ctaLink} className="btn btn-primary">
-        {content.ctaLabel}
-      </SmartLink>
     </div>
   );
 }

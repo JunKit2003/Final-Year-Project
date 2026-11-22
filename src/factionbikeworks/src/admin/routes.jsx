@@ -9,6 +9,7 @@ const ProductsList = lazy(() => import("./pages/products/ProductsList"));
 const ProductEditor = lazy(() => import("./pages/products/ProductEditor"));
 const StockLog = lazy(() => import("./pages/stock/StockLog"));
 const SettingsPage = lazy(() => import("./pages/settings/SettingsPage"));
+const ContentPage = lazy(() => import("./pages/content/ContentPage"));
 const OrdersList = lazy(() => import("./pages/orders/OrdersList"));
 const OrderDetail = lazy(() => import("./pages/orders/OrderDetail"));
 
@@ -34,7 +35,7 @@ export function adminRoutes() {
       <Route path="taxonomy" element={P("Categories & brands")} />
       <Route path="banners" element={P("Banners")} />
       <Route path="brands" element={P("Brands")} />
-      <Route path="content/:page" element={P("Site content")} />
+      <Route path="content/:page" element={<ContentPage />} />
       <Route path="settings/:group" element={<SettingsPage />} />
       <Route path="customers" element={P("Customers")} />
       <Route path="customers/:id" element={P("Customer")} />
