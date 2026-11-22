@@ -10,7 +10,18 @@ const CATALOGUE = [
   ["CushCore", "Tyre inserts"], ["Peaty's", "Maintenance"], ["Trek", "Accessories"], ["DMR", "Pedals"],
 ];
 
+/** Banner rows for the bundled images/banner_images/ photos, when there are none. */
+export async function seedBanners(db, { imagesRoot = process.env.IMAGES_ROOT || "images" } = {}) {
+  if ((await db.BannerImage.count()) > 0) return 0;
+  const dir = join(imagesRoot, "banner_images");
+  if (!existsSync(dir)) return 0;
+  const files = readdirSync(dir).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).sort();
+  for (const [i, f] of files.entries()) await db.BannerImage.create({ directory: f, position: i + 1, isActive: true, alt: "Faction Bikeworks" });
+  return files.length;
+}
+
 export async function seedDemo(db, { imagesRoot = process.env.IMAGES_ROOT || "images", limit = Infinity } = {}) {
+  await seedBanners(db, { imagesRoot });
   if ((await db.Products.count()) > 0) return { created: 0 };
   const root = join(imagesRoot, "product_images");
   if (!existsSync(root)) return { created: 0 };

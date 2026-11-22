@@ -1,6 +1,6 @@
 // Admin route tree, plugged into the app's data router (needed for unsaved-change guards).
 import { lazy } from "react";
-import { Route } from "react-router";
+import { Navigate, Route } from "react-router";
 import RequireAdmin from "./RequireAdmin";
 import Placeholder from "./pages/Placeholder";
 
@@ -10,6 +10,8 @@ const ProductEditor = lazy(() => import("./pages/products/ProductEditor"));
 const StockLog = lazy(() => import("./pages/stock/StockLog"));
 const SettingsPage = lazy(() => import("./pages/settings/SettingsPage"));
 const ContentPage = lazy(() => import("./pages/content/ContentPage"));
+const BannersPage = lazy(() => import("./pages/BannersPage"));
+const TaxonomyPage = lazy(() => import("./pages/TaxonomyPage"));
 const OrdersList = lazy(() => import("./pages/orders/OrdersList"));
 const OrderDetail = lazy(() => import("./pages/orders/OrderDetail"));
 
@@ -32,9 +34,9 @@ export function adminRoutes() {
       <Route path="products/new" element={<ProductEditor />} />
       <Route path="products/:id" element={<ProductEditor />} />
       <Route path="stock" element={<StockLog />} />
-      <Route path="taxonomy" element={P("Categories & brands")} />
-      <Route path="banners" element={P("Banners")} />
-      <Route path="brands" element={P("Brands")} />
+      <Route path="taxonomy" element={<TaxonomyPage />} />
+      <Route path="banners" element={<BannersPage />} />
+      <Route path="brands" element={<Navigate to="/admin/taxonomy" replace />} />
       <Route path="content/:page" element={<ContentPage />} />
       <Route path="settings/:group" element={<SettingsPage />} />
       <Route path="customers" element={P("Customers")} />
