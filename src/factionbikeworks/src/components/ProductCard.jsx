@@ -1,14 +1,15 @@
 import { Link } from "react-router";
 import { useTilt } from "../lib/motion";
 import { assetUrl } from "../lib/api";
-import { formatRM, priceRange, productImages, stockState, totalStock } from "../lib/shop";
+import { cardPrice, formatRM, priceRange, productImages, stockState, totalStock } from "../lib/shop";
 import { ArrowUpRight, Torx } from "./ui/Icons";
 
 export default function ProductCard({ product, index = 0, tilt = true }) {
   const ref = useTilt(tilt ? 6 : 0);
   const imgs = productImages(product).map(assetUrl);
   const { min, max } = priceRange(product);
-  const stock = stockState(totalStock(product));
+  const stock = stockState(totalStock(product), product.lowStockThreshold);
+  const sale = cardPrice(product);
   const variants = product.variations?.length || 0;
 
   return (
@@ -29,6 +30,7 @@ export default function ProductCard({ product, index = 0, tilt = true }) {
             <i /> {stock.label}
           </span>
           {variants > 1 && <span className="tag pcard-variants">{variants} options</span>}
+          {sale.was && <span className="tag tag--sale pcard-sale">Sale</span>}
         </div>
         <div className="pcard-body">
           <span className="pcard-brand mono">{product.brand}</span>
@@ -37,6 +39,7 @@ export default function ProductCard({ product, index = 0, tilt = true }) {
             <span className="pcard-price">
               {min !== max && <small>from </small>}
               {formatRM(min)}
+              {sale.was && sale.price === min && <s className="price-was">{formatRM(sale.was)}</s>}
             </span>
             <span className="pcard-go" aria-hidden>
               <ArrowUpRight />

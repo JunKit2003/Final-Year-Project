@@ -52,13 +52,17 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      // Legacy: photos now live in product_media. Kept so old rows stay valid.
       image_folder_path: {
         type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-          notEmpty: { msg: "Image folder path must not be empty!" },
-        },
+        allowNull: true,
       },
+      // Optional old price, shown struck through. Must be above `price` (checked by the API).
+      compareAtPrice: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
+      position: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+      // Set when a variation that has been ordered is removed: hidden but kept for history.
+      archivedAt: { type: DataTypes.DATE, allowNull: true },
+      version: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
     },
     {
       sequelize,

@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router";
 import { assetUrl } from "../lib/api";
 import { useProducts, useSession, useToast } from "../lib/store";
 import { cartLineState, cartTotal, formatRM, indexVariations, lineTotal } from "../lib/shop";
-import { Check, Empty, Loader, PageHead } from "../components/ui/Bits";
+import { Check, Empty, Loader, PageHead, headLines } from "../components/ui/Bits";
+import { useSite } from "../lib/site";
 import { Arrow, Lock, Torx, Trash } from "../components/ui/Icons";
 
 export function LineImage({ variationId, productId, sku, index }) {
@@ -18,6 +19,7 @@ export function LineImage({ variationId, productId, sku, index }) {
 }
 
 export default function Cart() {
+  const headings = useSite()["content.pages"];
   const { user, checking, cart, refreshCart, removeFromCart } = useSession();
   const { products } = useProducts();
   const toast = useToast();
@@ -43,7 +45,7 @@ export default function Cart() {
   if (!user) {
     return (
       <div className="page">
-        <PageHead kicker="Cart" lines={["Your", "cart"]} outline={[1]} />
+        <PageHead kicker="Cart" lines={headLines(headings.cart)} />
         <div className="wrap section-sm">
           <Empty kicker="Signed out" title="Sign in to see your cart" action={<Link to="/login" state={{ from: "/cart" }} className="btn btn-primary">Sign in <Arrow /></Link>}>
             Your cart is saved to your account, so it follows you from phone to laptop.
@@ -71,7 +73,7 @@ export default function Cart() {
 
   return (
     <div className="page cart">
-      <PageHead kicker={`${cart.length} ${cart.length === 1 ? "line" : "lines"}`} lines={["Your", "cart"]} outline={[1]} />
+      <PageHead kicker={`${cart.length} ${cart.length === 1 ? "line" : "lines"}`} lines={headLines(headings.cart)} />
 
       <div className="wrap section-sm">
         {cart.length === 0 ? (

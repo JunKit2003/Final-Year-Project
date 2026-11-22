@@ -25,14 +25,16 @@ export default (sequelize, DataTypes) => {
             },
           },
         },
+        // Nullable and SET NULL: deleting a variation must never erase order history.
+        // The snapshot columns below keep what was bought.
         variationId: {
           type: DataTypes.INTEGER,
-          allowNull: false,
+          allowNull: true,
           references: {
             model: "variations", // Table name for Variations
             key: "id",
           },
-          onDelete: "CASCADE",
+          onDelete: "SET NULL",
           validate: {
             isInt: {
               msg: "variationId must be an integer",
@@ -53,6 +55,10 @@ export default (sequelize, DataTypes) => {
             },
           },
         },
+        productName: { type: DataTypes.STRING, allowNull: true },
+        variationName: { type: DataTypes.STRING, allowNull: true },
+        sku: { type: DataTypes.STRING, allowNull: true },
+        // Unit price at the time of purchase.
         price: {
           type: DataTypes.DECIMAL(10, 2),
           allowNull: false,

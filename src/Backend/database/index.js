@@ -11,6 +11,7 @@ dotenv.config({ quiet: true });
 
 
 import { initializeDatabase } from './startup.js';
+import { runMigrations } from './migrate.js';
 
 // Initialize Sequelize with additional options
 const sequelize = new Sequelize(process.env.DATABASE, process.env.DATABASE_USERNAME, process.env.DATABASE_PASSWORD, {
@@ -65,6 +66,9 @@ await loadModels(join(__dirname, 'models'));
 console.log("Connected to the Database!");
 
 await sequelize.sync({ force: false });
+
+// Bring existing tables up to date (sync only creates missing tables).
+await runMigrations(sequelize, db);
 
 // Check if account table is empty
 const accountCount = await db.Account.count();

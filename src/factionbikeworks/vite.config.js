@@ -10,6 +10,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: 3000,
+      // src/shared (site settings schema) lives next to this package.
+      fs: { allow: [".."] },
       proxy: {
         "/api": { target: backend, changeOrigin: true },
         "/images": { target: backend, changeOrigin: true },

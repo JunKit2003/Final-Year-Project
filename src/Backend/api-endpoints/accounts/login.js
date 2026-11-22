@@ -31,7 +31,8 @@ export default async function login(req, res) {
         // console.log("Login - Comparison Result:", await bcrypt.compare(password, user.password));
 
 
-        if (!isPasswordValid) {
+        // Deactivated accounts get the same answer as a wrong password.
+        if (!isPasswordValid || user.isActive === false) {
             throw new InputValidationError("Invalid email/username or password.");
         }
 

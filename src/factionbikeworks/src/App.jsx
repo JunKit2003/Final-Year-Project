@@ -1,6 +1,9 @@
 import { Suspense, lazy, useEffect } from "react";
-import { BrowserRouter, Link, Outlet, Route, Routes, useLocation } from "react-router";
+import { Outlet, Route, RouterProvider, createBrowserRouter, createRoutesFromElements, useLocation } from "react-router";
+import { adminRoutes } from "./admin/routes";
 import { SessionProvider, ThemeModeProvider, ToastProvider } from "./lib/store";
+import { SiteProvider, titleFor, useSite } from "./lib/site";
+import { NotFoundBody } from "./components/sections/NotFound";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { ChatLauncher, Loader } from "./components/ui/Bits";
@@ -19,30 +22,18 @@ const PasswordReset = lazy(() => import("./pages/PasswordReset"));
 const OrderHistory = lazy(() => import("./pages/OrderHistory"));
 const CustomerViewOrderList = lazy(() => import("./pages/CustomerViewOrderList"));
 const Chatbot = lazy(() => import("./pages/Chatbot"));
-const AdminPage = lazy(() => import("./pages/Admin/AdminPage"));
-const ViewOrderList = lazy(() => import("./pages/Admin/ViewOrderList"));
-// MUI only loads for admin: the storefront bundle stays MUI-free.
-const AdminLayout = lazy(() => import("./pages/Admin/AdminLayout"));
 
-const TITLES = {
-  "/": "Faction Bikeworks · MTB parts, Bukit Kiara",
-  "/catalog": "Shop · Faction Bikeworks",
-  "/about": "About · Faction Bikeworks",
-  "/cart": "Cart · Faction Bikeworks",
-  "/checkoutPage": "Checkout · Faction Bikeworks",
-  "/login": "Sign in · Faction Bikeworks",
-  "/signup": "Create account · Faction Bikeworks",
-  "/orderHistory": "My orders · Faction Bikeworks",
-  "/chatbot": "Ask the mechanic · Faction Bikeworks",
-  "/admin": "Admin · Faction Bikeworks",
-};
 
 function RouteEffects() {
   const { pathname } = useLocation();
+  const site = useSite();
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (TITLES[pathname]) document.title = TITLES[pathname];
   }, [pathname]);
+  useEffect(() => {
+    // Admin and product pages set their own titles.
+    if (!pathname.startsWith("/admin") && !pathname.startsWith("/viewProduct")) document.title = titleFor(site, pathname);
+  }, [pathname, site]);
   return null;
 }
 
@@ -51,6 +42,7 @@ const NO_CHAT = ["/cart", "/checkoutPage", "/chatbot"];
 
 function SiteLayout() {
   const { pathname } = useLocation();
+  const { chatbot } = useSite();
   return (
     <div className="app">
       <Header />
@@ -60,7 +52,7 @@ function SiteLayout() {
         </Suspense>
       </main>
       <Footer />
-      {!NO_CHAT.includes(pathname) && <ChatLauncher />}
+      {chatbot.floating && !NO_CHAT.includes(pathname) && <ChatLauncher label={chatbot.launcherLabel} />}
     </div>
   );
 }
@@ -80,61 +72,53 @@ function BareLayout() {
 }
 
 function NotFound() {
+  return <NotFoundBody content={useSite()["content.notFound"]} />;
+}
+
+// Providers live inside the router: toasts can carry <Link> actions ("View cart"), and the
+// data router lets the admin block navigation away from unsaved edits.
+function Root() {
   return (
-    <div className="center-screen page topo">
-      <p className="kicker">404 / off piste</p>
-      <h1 className="display">
-        Wrong <span className="outline">line.</span>
-      </h1>
-      <Link to="/" className="btn btn-primary">
-        Back to the trailhead
-      </Link>
-    </div>
+    <ThemeModeProvider>
+      <ToastProvider>
+        <SessionProvider>
+          <SiteProvider>
+            <RouteEffects />
+            <Outlet />
+          </SiteProvider>
+        </SessionProvider>
+      </ToastProvider>
+    </ThemeModeProvider>
   );
 }
 
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<Root />}>
+      <Route element={<SiteLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/catalog/:brandname?" element={<Catalog />} />
+        <Route path="/viewProduct/:productId" element={<ViewProduct />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkoutPage" element={<CheckoutPage />} />
+        <Route path="/paymentSuccess" element={<PaymentSuccess />} />
+        <Route path="/paymentFailed" element={<PaymentFailed />} />
+        <Route path="/orderHistory" element={<OrderHistory />} />
+        <Route path="/customerViewOrderList/:uid/:orderId" element={<CustomerViewOrderList />} />
+        <Route path="/chatbot" element={<Chatbot />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+      <Route element={<BareLayout />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/PasswordReset" element={<PasswordReset />} />
+      </Route>
+      {adminRoutes()}
+    </Route>
+  )
+);
+
 export default function App() {
-  return (
-    // Router outermost: toasts can carry <Link> actions ("View cart").
-    <BrowserRouter>
-      <ThemeModeProvider>
-        <ToastProvider>
-          <SessionProvider>
-            <RouteEffects />
-            <Routes>
-              <Route element={<SiteLayout />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/catalog/:brandname?" element={<Catalog />} />
-                <Route path="/viewProduct/:productId" element={<ViewProduct />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkoutPage" element={<CheckoutPage />} />
-                <Route path="/paymentSuccess" element={<PaymentSuccess />} />
-                <Route path="/paymentFailed" element={<PaymentFailed />} />
-                <Route path="/orderHistory" element={<OrderHistory />} />
-                <Route path="/customerViewOrderList/:uid/:orderId" element={<CustomerViewOrderList />} />
-                <Route path="/chatbot" element={<Chatbot />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-              <Route element={<BareLayout />}>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/PasswordReset" element={<PasswordReset />} />
-              </Route>
-              <Route
-                element={
-                  <Suspense fallback={<Loader />}>
-                    <AdminLayout />
-                  </Suspense>
-                }
-              >
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/admin/viewOrderList/:orderId" element={<ViewOrderList />} />
-              </Route>
-            </Routes>
-          </SessionProvider>
-        </ToastProvider>
-      </ThemeModeProvider>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }

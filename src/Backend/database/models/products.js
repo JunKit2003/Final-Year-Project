@@ -1,6 +1,3 @@
-import { ValidationError } from "sequelize";
-import { snakeCaseToNormalCase } from "../../utils.js";
-import path from 'path';
 
 
 // Sequelize model for the products table
@@ -43,6 +40,18 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      // draft: only admins see it; live: on the shop; archived: hidden, kept for order history.
+      status: {
+        type: DataTypes.ENUM("draft", "live", "archived"),
+        allowNull: false,
+        defaultValue: "live",
+      },
+      featured: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+      // [{ label, value }] shown as a table on the product page.
+      specs: { type: DataTypes.JSON, allowNull: false, defaultValue: [] },
+      // "Only N left" at or under this many units.
+      lowStockThreshold: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 3, validate: { min: 0 } },
+      version: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
     },
     {
       sequelize,
@@ -59,37 +68,21 @@ export default (sequelize, DataTypes) => {
     });
   };
 
-  // Add a hook to synchronize the brand_images table after a product is created
-  Products.afterCreate(async (product, options) => {
-    const { brand } = product;
-    try {
-      // Check if the BrandImages model is available in sequelize.models
-      if (!sequelize.models.BrandImages) {
-        console.error("BrandImages model is not available in sequelize.models.");
-        return;
-      }
-  
-      // Check if the brand already exists in the brand_images table
-      const existingBrand = await sequelize.models.BrandImages.findOne({
-        where: { brandName: brand },
-      });
-  
-      // If it doesn't exist, add it
-      if (!existingBrand) {
-        await sequelize.models.BrandImages.create({
-          brandName: brand,
-          imagePath: "NoImage", // Default to an empty image path or placeholder
-          isVisible: true, // Default visibility
-        });
-        console.log(`Added brand: ${brand} to brand_images table.`);
-      } else {
-        console.log(`Brand: ${brand} already exists in brand_images table.`);
-      }
-    } catch (error) {
-      console.error("Error in Products.afterCreate hook:", error);
+  // Every brand on a product has a brand_images row (logo, visibility, order), created
+  // in the same transaction as the product so a rollback leaves nothing behind.
+  const ensureBrand = async (product, options) => {
+    const BrandImages = sequelize.models.BrandImages;
+    if (!BrandImages || !product.brand) return;
+    const existing = await BrandImages.findOne({ where: { brandName: product.brand }, transaction: options.transaction });
+    if (!existing) {
+      const max = (await BrandImages.max("position", { transaction: options.transaction })) || 0;
+      await BrandImages.create({ brandName: product.brand, imagePath: "NoImage", isVisible: true, position: max + 1 }, { transaction: options.transaction });
     }
+  };
+  Products.afterCreate(ensureBrand);
+  Products.afterUpdate(async (product, options) => {
+    if (product.changed("brand")) await ensureBrand(product, options);
   });
-  
 
   return Products;
 };

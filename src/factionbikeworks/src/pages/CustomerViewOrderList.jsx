@@ -7,9 +7,10 @@ import { Empty, Loader } from "../components/ui/Bits";
 import { LineImage } from "./Cart";
 import { orderDate } from "./OrderHistory";
 import { ArrowLeft, Check, Close, Package, Phone, Pin, User, WhatsApp } from "../components/ui/Icons";
-import { SHOP } from "../components/Footer";
+import { useSite } from "../lib/site";
 
 export default function CustomerViewOrderList() {
+  const { shop } = useSite();
   const { uid, orderId } = useParams();
   const { user, checking } = useSession();
   const { products } = useProducts();
@@ -124,7 +125,7 @@ export default function CustomerViewOrderList() {
                 <Package /> {cancelled ? "Order cancelled" : step >= 2 ? "On its way" : "Being prepared at the shop"}
               </li>
             </ul>
-            <a className="btn btn-ghost btn-block" href={`${SHOP.whatsapp}?text=${wa}`} target="_blank" rel="noopener noreferrer">
+            <a className="btn btn-ghost btn-block" href={`${shop.whatsapp}?text=${wa}`} target="_blank" rel="noopener noreferrer">
               <WhatsApp /> Ask about this order
             </a>
           </aside>

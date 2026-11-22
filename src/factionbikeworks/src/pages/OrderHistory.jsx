@@ -3,13 +3,15 @@ import { Link } from "react-router";
 import api from "../lib/api";
 import { useProducts, useSession } from "../lib/store";
 import { formatRM, indexVariations } from "../lib/shop";
-import { Empty, Loader, PageHead } from "../components/ui/Bits";
+import { Empty, Loader, PageHead, headLines } from "../components/ui/Bits";
+import { useSite } from "../lib/site";
 import { LineImage } from "./Cart";
 import { Arrow, ArrowUpRight } from "../components/ui/Icons";
 
 export const orderDate = (o) => (o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" }) : "");
 
 export default function OrderHistory() {
+  const headings = useSite()["content.pages"];
   const { user, checking } = useSession();
   const { products } = useProducts();
   const index = useMemo(() => indexVariations(products), [products]);
@@ -43,7 +45,7 @@ export default function OrderHistory() {
 
   return (
     <div className="page orders">
-      <PageHead kicker={`${orders.length} ${orders.length === 1 ? "order" : "orders"}`} lines={["Order", "history"]} outline={[1]} />
+      <PageHead kicker={`${orders.length} ${orders.length === 1 ? "order" : "orders"}`} lines={headLines(headings.orders)} />
       <div className="wrap section-sm">
         {error && <div className="alert alert-error">{error}</div>}
         {orders.length === 0 ? (

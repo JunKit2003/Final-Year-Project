@@ -1,16 +1,30 @@
 import { useEffect, useState } from "react";
 import api, { assetUrl } from "../lib/api";
 import { Torx } from "./ui/Icons";
+import { Markup } from "./ui/Markup";
+import { useSite } from "../lib/site";
 
-/** Split layout for sign-in pages: shop photo + big type on one side, form on the other. */
-export default function AuthShell({ kicker, lines, outline = [], children }) {
-  const [photo, setPhoto] = useState(null);
+/**
+ * Split layout for sign-in pages: shop photo + big type on one side, form on the other.
+ * `page` is "login" | "signup" | "reset" in the content.auth settings.
+ */
+export default function AuthShell({ page, children }) {
+  const auth = useSite()["content.auth"];
+  const { kicker, lines: headLines } = auth[page];
+  const lines = headLines.map((l) => l.value);
+  const [banner, setBanner] = useState(null);
   useEffect(() => {
+    if (auth.photo) return undefined;
+    let live = true;
     api
       .post("/api/banner/get", {})
-      .then((res) => setPhoto(assetUrl(res.data?.banners?.[0]?.imageUrl)))
-      .catch(() => setPhoto(null));
-  }, []);
+      .then((res) => live && setBanner(assetUrl(res.data?.banners?.[0]?.imageUrl)))
+      .catch(() => live && setBanner(null));
+    return () => {
+      live = false;
+    };
+  }, [auth.photo]);
+  const photo = auth.photo ? assetUrl(auth.photo) : banner;
 
   return (
     <div className="page auth">
@@ -19,9 +33,9 @@ export default function AuthShell({ kicker, lines, outline = [], children }) {
           <p className="kicker">{kicker}</p>
           <h1 className="display auth-display">
             {lines.map((l, i) => (
-              <span className="line" key={l}>
-                <span className={outline.includes(i) ? "outline" : ""} style={{ animationDelay: `${80 + i * 110}ms` }}>
-                  {l}
+              <span className="line" key={`${i}${l}`}>
+                <span style={{ animationDelay: `${80 + i * 110}ms` }}>
+                  <Markup text={l} />
                 </span>
               </span>
             ))}

@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import api from "../lib/api";
 import { useProducts, useSession } from "../lib/store";
 import { cartLineState, cartTotal, formatRM, indexVariations, lineTotal } from "../lib/shop";
-import { Empty, Loader, PageHead } from "../components/ui/Bits";
+import { Empty, Loader, PageHead, headLines } from "../components/ui/Bits";
+import { useSite } from "../lib/site";
 import { LineImage } from "./Cart";
 import { ArrowLeft, Lock, Shield } from "../components/ui/Icons";
 
@@ -28,7 +29,8 @@ const parseSelected = (raw) => {
 };
 
 export default function CheckoutPage() {
-  const { user, checking, cart } = useSession();
+  const headings = useSite()["content.pages"];
+  const { user, checking, cart, refreshCart } = useSession();
   const { products } = useProducts();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -90,13 +92,15 @@ export default function CheckoutPage() {
       window.location.assign(res.data.url);
     } catch (err) {
       setError(err.response?.data?.message || "We couldn't start checkout. Please try again.");
+      // Not enough stock: the server trimmed the cart, so show the new quantities.
+      if (err.response?.status === 409) refreshCart?.();
       setPlacing(false);
     }
   };
 
   return (
     <div className="page checkout">
-      <PageHead kicker="Secure checkout" lines={["Almost", "riding"]} outline={[1]} />
+      <PageHead kicker={headings.checkout.kicker} lines={headLines(headings.checkout)} />
       <div className="wrap section-sm">
         <form className="checkout-grid" onSubmit={place} noValidate>
           <div className="checkout-form">

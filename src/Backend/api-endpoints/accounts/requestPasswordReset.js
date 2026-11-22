@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import { transporter, mailFrom } from '../../config/nodemailer.js';
 import { db } from '../../database/index.js';
 import { InputValidationError } from '../../database/utils.js';
+import { getSite } from '../../features/settings/service.js';
+import { renderTemplate } from '../../../shared/site-schema.js';
 
 export default async function requestPasswordReset(req, res) {
   try {
@@ -26,23 +28,15 @@ export default async function requestPasswordReset(req, res) {
     user.password_reset_token_expiration = expiration;
     await user.save();
 
-    // Send password reset email
+    // Send password reset email; wording comes from the "emails" site settings.
+    const site = await getSite();
+    const t = site.emails.passwordReset;
+    const vars = { name: user.first_name || user.username, code: resetToken, shopName: site.shop.name };
     const mailOptions = {
       from: mailFrom(), // EMAIL_FROM, a Brevo-verified sender
       to: user.email,
-      subject: 'Password Reset Request',
-      text: `Hello,
-
-You requested a password reset. Use this code:
-
-${resetToken}
-
-It expires in 15 minutes.
-
-If you did not request this, ignore this email.
-
-Faction Bikeworks Team
-`,
+      subject: renderTemplate(t.subject, vars),
+      text: renderTemplate(t.body, vars),
     };
 
     await transporter.sendMail(mailOptions);

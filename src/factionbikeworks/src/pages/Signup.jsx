@@ -43,7 +43,7 @@ export default function Signup() {
   };
 
   return (
-    <AuthShell kicker="Join the faction" lines={["Drop", "in."]} outline={[1]}>
+    <AuthShell page="signup">
       <div>
         <h2 className="h2">Create account</h2>
         <p className="muted auth-sub">

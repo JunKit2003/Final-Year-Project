@@ -56,7 +56,7 @@ export default function PasswordReset() {
   };
 
   return (
-    <AuthShell kicker="Account recovery" lines={["Reset", "& ride"]} outline={[1]}>
+    <AuthShell page="reset">
       <div>
         <p className="mono dim steps">Step {step} of 2</p>
         <h2 className="h2">{step === 1 ? "Forgot password" : "Set a new one"}</h2>

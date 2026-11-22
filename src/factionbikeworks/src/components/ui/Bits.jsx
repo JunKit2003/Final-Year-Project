@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { Chat, Torx } from "./Icons";
+import { Markup } from "./Markup";
 
 export function Loader({ label = "Loading" }) {
   return (
@@ -22,6 +23,10 @@ export function Empty({ kicker, title, children, action }) {
 }
 
 /** Big type-led page header. */
+/** Heading lines from a settings "head" group ({ lines: [{ value }] }). */
+export const headLines = (head) => (head?.lines || []).map((l) => l.value);
+
+/** Page header. Lines accept title markup (~outline~ ...); `outline` still outlines whole lines. */
 export function PageHead({ kicker, lines, outline = [], lead, children }) {
   return (
     <header className="page-head topo">
@@ -29,9 +34,9 @@ export function PageHead({ kicker, lines, outline = [], lead, children }) {
         {kicker && <p className="kicker fade-up">{kicker}</p>}
         <h1 className="h1">
           {lines.map((l, i) => (
-            <span className="line" key={l}>
+            <span className="line" key={`${i}${l}`}>
               <span className={outline.includes(i) ? "outline" : ""} style={{ animationDelay: `${80 + i * 100}ms` }}>
-                {l}
+                <Markup text={l} />
               </span>
             </span>
           ))}
@@ -69,11 +74,11 @@ export function Marquee({ items, reverse = false, speed = 38 }) {
 }
 
 /** Floating launcher for the Botpress mechanic chat. */
-export function ChatLauncher() {
+export function ChatLauncher({ label = "Ask the mechanic" }) {
   return (
-    <Link to="/chatbot" className="chat-fab" aria-label="Ask the mechanic">
+    <Link to="/chatbot" className="chat-fab" aria-label={label}>
       <Chat />
-      <span>Ask the mechanic</span>
+      <span>{label}</span>
     </Link>
   );
 }

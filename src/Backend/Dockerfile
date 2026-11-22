@@ -6,6 +6,8 @@ COPY factionbikeworks/package.json factionbikeworks/package-lock.json ./
 RUN --mount=type=secret,id=npm_ca,required=false \
     NODE_EXTRA_CA_CERTS=/run/secrets/npm_ca npm ci --no-audit --no-fund
 COPY factionbikeworks/ .
+# Site settings schema shared with the API (imported as ../../../shared from src/lib).
+COPY shared/ /shared/
 # Empty uses same-origin API and images.
 ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
@@ -26,6 +28,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --chown=node:node Backend/ .
+COPY --chown=node:node shared/ /shared/
 COPY --from=storefront /app/build ./storefront
 ENV SERVE_STOREFRONT=true
 # Uploaded product/banner/brand images are written here at runtime; compose mounts a volume

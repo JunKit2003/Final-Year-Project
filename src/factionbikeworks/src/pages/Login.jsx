@@ -32,7 +32,7 @@ export default function Login() {
   };
 
   return (
-    <AuthShell kicker="Welcome back" lines={["Clip", "in."]} outline={[1]}>
+    <AuthShell page="login">
       <div>
         <h2 className="h2">Sign in</h2>
         <p className="muted auth-sub">
