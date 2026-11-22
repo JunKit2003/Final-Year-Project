@@ -75,6 +75,7 @@ export default async function createOrder(req, res) {
       }
 
       const variation = await db.Variations.findByPk(item.variation_id, {
+        include: [{ model: db.Products, as: "product", attributes: ["name"] }],
         transaction,
       });
       if (!variation) {
@@ -88,6 +89,10 @@ export default async function createOrder(req, res) {
           variationId: item.variation_id,
           quantity: item.quantity,
           price,
+          // Snapshot: the order keeps what was bought even if the product changes later.
+          productName: variation.product?.name ?? null,
+          variationName: variation.name,
+          sku: variation.sku,
         },
         { transaction }
       );

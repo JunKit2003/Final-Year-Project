@@ -44,7 +44,7 @@ export async function makeAccount(overrides = {}) {
     username: `user${u}`,
     email: `user${u}@example.test`,
     phone_number: "0123456789",
-    password: "x".repeat(60),
+    password: "Hashed$1" + "x".repeat(52),
     ...overrides,
   });
 }

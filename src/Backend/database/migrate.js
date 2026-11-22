@@ -39,7 +39,7 @@ export function makeUmzug(sequelize, db) {
       name: file.replace(/\.js$/, ""),
       up: async (params) => {
         const mod = await import(pathToFileURL(join(migrationsDir, file)).href);
-        return mod.up(params);
+        return mod.up(params.context);
       },
     })),
     context: { qi: sequelize.getQueryInterface(), sequelize, db },
